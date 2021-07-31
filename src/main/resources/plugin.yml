@@ -1,0 +1,19 @@
+main: tv.ingoh.minecraft.plugins.ingobotcore.Main
+name: IngoBotCore
+author: IngoHHacks
+softdepend: [Minecord]
+version: 0.0.1
+api-version: 1.17
+commands:
+ i:
+  description: All IngoBot commands
+  permission: ingobotcore.i
+  usage: /<command> <cmd> (args)
+permissions:
+ ingobotcore.*:
+  description: All IngoBot permissions
+  default: op
+  children:
+   ingobotcore.i:
+    description: Permission for using the /i command.
+    default: true
