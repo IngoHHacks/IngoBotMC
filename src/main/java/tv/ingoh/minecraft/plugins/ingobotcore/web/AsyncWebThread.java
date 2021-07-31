@@ -49,11 +49,11 @@ public class AsyncWebThread implements Runnable {
                 switch (q.type) {
                     case CHAT:
                         try {
-                            u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text, "UTF-8")));
+                            u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")));
                             ch.append(text, isPublic, user);
                             String res = executeConverse(u, finish, ch);
                             if (finish) {
-                                ch.append(res, isPublic, user);
+                                ch.append(res.substring(2), isPublic, user);
                                 res = ("..." + res).replace("...>>", "...");
                             } else {
                                 ch.append("\n" + res, isPublic, user);
@@ -94,7 +94,7 @@ public class AsyncWebThread implements Runnable {
                     if (tries == 2) {
                         discord.sendDebug("ERROR01: No output");
                         r.close();
-                        return "[TIMED OUT]\\nError: No output";
+                        return "[TIMED OUT]\nError: No output";
                     }
                 } else {
                     String out = r.readLine().replace("<br>", "");
@@ -110,7 +110,7 @@ public class AsyncWebThread implements Runnable {
                             discord.sendDebug("**Filtered: " + s + "**");
                             discord.sendDebug("ERROR01: No output");
                             r.close();
-                            return "[TIMED OUT]\\nError: No output";
+                            return "[TIMED OUT]\nError: No output";
                         }
                     } else {
                         if (finish && !s.equals(">>") && !s.equals(">> ") && !s.equals(">>?") && !s.equals(">>.")) {
@@ -139,7 +139,7 @@ public class AsyncWebThread implements Runnable {
         } catch (IOException e) {    
             discord.sendDebug("ERROR02: No response");
             discord.sendDebug("CODE: " + e.getMessage());
-            return "[NO RESPONSE] + \\nError: " + e.getMessage();
+            return "[NO RESPONSE] + \nError: " + e.getMessage();
         }
         return "[NO RESPONSE]";     // Unused
     }

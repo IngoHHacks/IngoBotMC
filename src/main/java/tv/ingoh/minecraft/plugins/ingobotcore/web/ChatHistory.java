@@ -20,9 +20,9 @@ public class ChatHistory {
             } else {
                 if (entry.user.equals(user)) hist += entry.string;
             }
-            if (hist.length() >= 1000) return hist.substring(0, 1000);
+            if (hist.length() >= 1000) return hist.substring(0, 1000).replaceAll("[^\\x00-\\x7F]", "");
         }
-        return hist;
+        return hist.replaceAll("[^\\x00-\\x7F]", "");
     }
     
 }
