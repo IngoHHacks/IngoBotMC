@@ -74,7 +74,7 @@ public class AsyncWebThread implements Runnable {
                             } else {
                                 IngoBot.sendMessageFromAsync(main, res, user);
                             }
-                        } catch (MalformedURLException | UnsupportedEncodingException e) {
+                        } catch (Exception e) {
                             discord.sendDebug("Unhandled Exception: " + e.toString());
                             discord.printStackTrace(e.getStackTrace());
                         }
@@ -204,7 +204,7 @@ public class AsyncWebThread implements Runnable {
                 tries++;
                 r.close();
             }
-        } catch (IOException e) {    
+        } catch (Exception e) {    
             discord.sendDebug("ERROR02: No response");
             discord.sendDebug("CODE: " + e.getMessage());
             return "[NO RESPONSE] + \nError: " + e.getMessage();
@@ -216,5 +216,4 @@ public class AsyncWebThread implements Runnable {
             queue.add(q);
         }
     }
-    
 }
