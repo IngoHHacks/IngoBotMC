@@ -37,7 +37,7 @@ public class IngoBot {
 
     public static void sendMessageRaw(String message, DiscordInterface discord) {
         Bukkit.broadcastMessage(message);
-        discord.sendChat(message, false);
+        discord.sendChat(message, true);
     }
 
     public static void sendMessageRaw(String message, CommandSender user, DiscordInterface discord) {
