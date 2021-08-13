@@ -12,6 +12,7 @@ public class Config {
     long cPlayerlist;
     long cWatchlist;
     long cSpreadsheet;
+    String spreadsheet;
 
     public Config(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -27,6 +28,7 @@ public class Config {
         plugin.getConfig().set("channel-playerlist", cPlayerlist);
         plugin.getConfig().set("channel-watchlist", cWatchlist);
         plugin.getConfig().set("channel-spreadsheet", cSpreadsheet);
+        plugin.getConfig().set("spreadsheet", spreadsheet);
         plugin.saveConfig();
 	}
 
@@ -38,6 +40,7 @@ public class Config {
         cPlayerlist = (long) plugin.getConfig().get("channel-playerlist");
         cWatchlist = (long) plugin.getConfig().get("channel-watchlist");
         cSpreadsheet = (long) plugin.getConfig().get("channel-spreadsheet");
+        spreadsheet = (String) plugin.getConfig().get("spreadsheet");
 	}
 
     public JavaPlugin getPlugin() {
@@ -70,6 +73,10 @@ public class Config {
 
     public long getcWatchlist() {
         return cWatchlist;
+    }
+    
+    public String getSpreadsheet() {
+        return spreadsheet;
     }
 
     public void setEnabled(boolean enabled) {
@@ -104,6 +111,11 @@ public class Config {
 
     public void setcWatchlist(long cWatchlist) {
         this.cWatchlist = cWatchlist;
+        save();
+    }
+
+    public void setSpreadsheet(String spreadsheet) {
+        this.spreadsheet = spreadsheet;
         save();
     }
     

@@ -16,13 +16,17 @@ public class ChatHistory {
         String hist = "";
         for (HistoryEntry entry : history) {
             if (isPublic) {
-                if (entry.user.equals("*")) hist += entry.string;
+                if (entry.user.equals("*")) hist += entry.string.replace("\n", "\r\n");
             } else {
-                if (entry.user.equals(user)) hist += entry.string;
+                if (entry.user.equals(user)) hist += entry.string.replace("\n", "\r\n");
             }
             if (hist.length() >= 1000) return hist.substring(0, 1000).replaceAll("[^\\x00-\\x7F]", "");
         }
         return hist.replaceAll("[^\\x00-\\x7F]", "");
+    }
+
+    public void removeLast() {
+        if (history.size() > 0) history.removeLast();
     }
     
 }

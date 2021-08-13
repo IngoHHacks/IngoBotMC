@@ -35,7 +35,7 @@ public class AsyncChatThread implements Runnable {
                 ChatMessage msg = queue.getFirst();
                 if (msg.message.charAt(0) == '!' && msg.message.length() > 1) {
                     String args[] = msg.message.substring(1, msg.message.length()).split(" ");
-                    CoreCommands.scheduleCommand(main, args[0], Arrays.copyOfRange(args, 1, args.length), msg.sender.getName(), wThread, true, discord);
+                    CoreCommands.scheduleCommand(main, args[0], Arrays.copyOfRange(args, 1, args.length), msg.sender, wThread, true, discord);
                 }
                 queue.removeFirst();
             }

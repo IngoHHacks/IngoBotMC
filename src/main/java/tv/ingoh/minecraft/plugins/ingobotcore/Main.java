@@ -1,26 +1,49 @@
 package tv.ingoh.minecraft.plugins.ingobotcore;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.security.auth.login.LoginException;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.server.BroadcastMessageEvent;
+import org.bukkit.event.server.TabCompleteEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
+import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
+import net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.server.network.PlayerConnection;
 import tv.ingoh.minecraft.plugins.ingobotcore.chat.ChatThread;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ChatMessage;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CoreCommands;
-import tv.ingoh.minecraft.plugins.ingobotcore.command.ResultType;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ScheduledCommand;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
@@ -28,7 +51,7 @@ import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
 public class Main extends JavaPlugin implements Listener {
 
     JavaPlugin plugin;
-    Config config;
+    public Config config;
     public DiscordInterface discord;
     LinkedList<ChatMessage> chatQueue;
     WebThread wThread;
@@ -36,6 +59,10 @@ public class Main extends JavaPlugin implements Listener {
     LinkedList<Message> outputQueue;
     LinkedList<ScheduledCommand> commandQueue;
     MainLoop mainLoop;
+    EntityPlayer ingobotNPC;
+    LinkedList<String> syncCommands;
+    LinkedList<ExternalMessageEvent> minecordBC;
+    ArrayList<Countdown> countdowns;
 
     @Override
     public void onEnable() {
@@ -43,20 +70,16 @@ public class Main extends JavaPlugin implements Listener {
         plugin = this;
         config = new Config(this);
         config.load();
-        discord = new DiscordInterface(config);
+        discord = new DiscordInterface(config, this);
         try {
             discord.start();
         } catch (LoginException e) {
             e.printStackTrace();
         }
         getServer().getPluginManager().registerEvents(this, this);
-        getCommand("i").setTabCompleter(new TabCompleter() {
-            @Override
-            public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
-                return null;
-            }
-        });
+        getCommand("i").setTabCompleter(new IngoBotTabCompleter());
 
+        // Threads
         wThread = new WebThread();
         wThread.run(this);
 
@@ -65,10 +88,41 @@ public class Main extends JavaPlugin implements Listener {
 
         outputQueue = new LinkedList<>();
         commandQueue = new LinkedList<>();
+        syncCommands = new LinkedList<>();
+        minecordBC = new LinkedList<>();
+        countdowns = new ArrayList<>();
         
-        mainLoop = new MainLoop(outputQueue, commandQueue, discord);
+        mainLoop = new MainLoop(outputQueue, commandQueue, syncCommands, minecordBC, countdowns, discord);
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, mainLoop, 0, 1);
 
+        // Entity
+        MinecraftServer nmsServer = ((CraftServer) Bukkit.getServer()).getServer();
+        WorldServer nmsWorld = ((CraftWorld)Bukkit.getWorlds().get(0)).getHandle(); // First world (overworld)
+        GameProfile gameProfile = new GameProfile(UUID.randomUUID(), "IngoBot");
+
+        // SKIN
+        try {
+            HttpsURLConnection connection = (HttpsURLConnection) new URL(String.format("https://api.ashcon.app/mojang/v2/user/%s", "IngoBot")).openConnection();
+            if (connection.getResponseCode() == HttpsURLConnection.HTTP_OK) {
+                ArrayList<String> lines = new ArrayList<>();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                reader.lines().forEach(line -> lines.add(line));
+                String reply = String.join(" ", lines);
+                int indexOfValue = reply.indexOf("\"value\": \"");
+                int indexOfSignature = reply.indexOf("\"signature\": \"");
+                String skin = reply.substring(indexOfValue + 10, reply.indexOf("\"", indexOfValue + 10));
+                String signature = reply.substring(indexOfSignature + 14, reply.indexOf("\"", indexOfSignature + 14));
+                gameProfile.getProperties().put("textures", new Property("textures", skin, signature));
+            }
+            else {
+                Bukkit.getLogger().warning("Failed to open connection when loading IngoBot skin: " + connection.getResponseCode() + ", " + connection.getResponseMessage());
+            }
+        } catch (IOException e) {
+            Bukkit.getLogger().warning("Error while opening connection when loading IngoBot skin.");
+            e.printStackTrace();
+        }
+        ingobotNPC = new EntityPlayer(nmsServer, nmsWorld, gameProfile);
+        ingobotNPC.setLocation(/*x*/0.5, /*y*/100, /*z*/0.5, /*yaw*/0, /*pitch*/0);
     }
 
     @Override
@@ -81,14 +135,10 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        discord.sendChat("<" + sender.getName() + "> /" + label + " " + argsToString(args));
+        discord.sendChat("<" + sender.getName() + "> /" + label + " " + argsToString(args), false);
         if (label.equalsIgnoreCase("i")) {
             CommandResult result;
-            if (args.length >= 1)  {
-                result = CoreCommands.executeCommand(args[0], Arrays.copyOfRange(args, 1, args.length), sender.getName(), wThread, false, discord);
-            } else {
-                result = new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1+");
-            }
+            result = CoreCommands.executeCommand(this, args[0], Arrays.copyOfRange(args, 1, args.length), sender.getName(), wThread, false, discord);
             if (!result.isSuccessful()) {
                 IngoBot.sendMessageRaw(ChatColor.RED + result.toString(), sender, discord);
                 if (result.isUnhandledException()) {
@@ -106,19 +156,19 @@ public class Main extends JavaPlugin implements Listener {
     public boolean onChatMessage(AsyncPlayerChatEvent event) {
         if (event.isAsynchronous()) {
             while (cThread.queueUsed()); // Wait
-            chatQueue.add(new ChatMessage(event.getMessage(), event.getPlayer()));
-            discord.sendChat("<" + event.getPlayer().getName() + "> " + event.getMessage());
+            chatQueue.add(new ChatMessage(event.getMessage(), event.getPlayer().getName()));
+            discord.sendChat("<" + event.getPlayer().getName() + "> " + event.getMessage(), false);
         }
         return true;
     }
 
     public void scheduleCommand(ScheduledCommand scheduledCommand) {
-        while (mainLoop.queueUsed); // Wait until queue is not used
+        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
         commandQueue.add(scheduledCommand);
     }
 
     public void scheduleMessage(Message message) {
-        while (mainLoop.queueUsed); // Wait until queue is not used
+        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
         outputQueue.add(message);
     }
 
@@ -130,4 +180,67 @@ public class Main extends JavaPlugin implements Listener {
         return sb.toString().trim();
     }
 
+    @EventHandler
+    public boolean onJoin(PlayerJoinEvent event) {
+        Player p = event.getPlayer();
+        createNPCFor(ingobotNPC, p);
+        return true;
+    }
+
+    @EventHandler
+    public boolean onBroadcastMessage(BroadcastMessageEvent event) {
+        // For Discord messages
+        String msg = event.getMessage();
+        if (msg.contains("#") && msg.contains("<") && msg.contains(">") && msg.contains("!")) {
+            String sender = StringUtils.substringBetween(msg, "<", ">");
+            while (cThread.queueUsed()); // Wait
+            chatQueue.add(new ChatMessage("!" + event.getMessage().split("!")[1], sender));
+            discord.sendChat(event.getMessage(), false);
+        }
+        return true;
+    }
+
+    public void createNPCFor(EntityPlayer npc, Player target) {
+        PlayerConnection connection = ((CraftPlayer)target).getHandle().b; /* playerconnection */
+        connection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a /* add */, npc));
+        connection.sendPacket(new PacketPlayOutNamedEntitySpawn(npc));
+    }
+
+    public void sendCommand(String contentRaw) {
+        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
+        syncCommands.add(contentRaw);
+    }
+
+    public void scheduleMinecord(ExternalMessageEvent messageEvent) {
+        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
+        minecordBC.add(messageEvent);
+    }
+
+    public boolean scheduleCountdown(Player senderP, double time) {
+
+        // Max 1 countdown per player, 5 total.
+
+        if (countdowns.size() > 4) {
+            return false;
+        }
+
+        for (Countdown cd : countdowns) {
+            if (cd.target == senderP) {
+                return false;
+            }
+        }
+
+        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
+        countdowns.add(new Countdown(discord, senderP, time));
+
+        return true;
+
+    }
+    public static List<String> getPlayerList() {
+        LinkedList<String> pList = new LinkedList<>();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            pList.add(p.getName());
+        }
+        return pList;
+    }
 }

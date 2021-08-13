@@ -37,7 +37,7 @@ public class CommandResult {
     }
 
     public boolean isUnhandledException() {
-        return type.equals(ResultType.EXECUTIONXCEPTION);
+        return type.equals(ResultType.EXECUTIONERROREXCEPTION);
     }
 
     public void printStackTrace(DiscordInterface discord) {

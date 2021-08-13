@@ -1,5 +1,6 @@
 package tv.ingoh.util.calculator;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 
 import tv.ingoh.util.calculator.exceptions.VariableSetException;
@@ -41,6 +42,10 @@ public class Variables {
         t.setVariable("ans");
         if (varList.size() > 10000) varList.remove(varList.entrySet().stream().findFirst().get().getKey());
         return t;
+    }
+
+    public Collection<String> getList() {
+        return varList.keySet();
     }
     
 }

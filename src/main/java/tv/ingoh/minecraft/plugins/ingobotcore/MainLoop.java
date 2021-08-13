@@ -1,13 +1,14 @@
 package tv.ingoh.minecraft.plugins.ingobotcore;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CoreCommands;
-import tv.ingoh.minecraft.plugins.ingobotcore.command.ResultType;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ScheduledCommand;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 
@@ -15,13 +16,20 @@ public class MainLoop implements Runnable {
 
     private volatile LinkedList<Message> outputQueue;
     private volatile LinkedList<ScheduledCommand> commandQueue;
+    private volatile LinkedList<String> syncCommands;
+    private volatile LinkedList<ExternalMessageEvent> minecordBC;
+    private volatile ArrayList<Countdown> countdowns;
+
 
     boolean queueUsed;
     DiscordInterface discord;
 
-    public MainLoop(LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, DiscordInterface discord) {
+    public MainLoop(LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, LinkedList<ExternalMessageEvent> minecordBC, ArrayList<Countdown> countdowns, DiscordInterface discord) {
         this.outputQueue = outputQueue;
         this.commandQueue = commandQueue;
+        this.syncCommands = syncCommands;
+        this.minecordBC = minecordBC;
+        this.countdowns = countdowns;
         queueUsed = false;
         this.discord = discord;
     }
@@ -38,7 +46,7 @@ public class MainLoop implements Runnable {
                     Player p = Bukkit.getPlayer(outputQueue.getFirst().receiver);
                     if (p != null) p.sendMessage(outputQueue.getFirst().message);
                     else Bukkit.getLogger().info(outputQueue.getFirst().message);
-                    discord.sendChat("IngoBot -> " + outputQueue.getFirst().receiver + ": " + outputQueue.getFirst().message);
+                    discord.sendChat("IngoBot -> " + outputQueue.getFirst().receiver + ": " + outputQueue.getFirst().message, false);
                 } else {
                     Bukkit.broadcastMessage(outputQueue.getFirst().message);
                     discord.sendChat(outputQueue.getFirst().message);
@@ -48,12 +56,7 @@ public class MainLoop implements Runnable {
 
             if (commandQueue.size() > 0) {
                 CommandResult result;
-                String[] args = commandQueue.getFirst().getArgs();
-                if (args.length >= 1)  {
-                    result = CoreCommands.executeCommand(commandQueue.getFirst());
-                } else {
-                    result = new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1+");
-                }
+                result = CoreCommands.executeCommand(commandQueue.getFirst());
                 if (!result.isSuccessful()) {
                     IngoBot.sendMessageRaw(result.toString(), discord);
                     if (result.isUnhandledException()) {
@@ -62,13 +65,51 @@ public class MainLoop implements Runnable {
                 }
                 commandQueue.removeFirst();
             }
-            queueUsed = false;
+
+            if (syncCommands.size() > 0) {
+                String contentRaw = syncCommands.getFirst();
+                if (contentRaw.charAt(0) == '/') {
+                    boolean result = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), contentRaw.substring(1));
+                    if (result /*exists*/) {
+                        discord.sendInfoChat("Command executed.");
+                    } else {
+                        discord.sendInfoChat("Command not executed.");
+                    }
+                }
+                else Bukkit.broadcastMessage("[IngoBot] " + contentRaw);
+                syncCommands.removeFirst();
+            }
+
+            if (minecordBC.size() > 0) {
+                ExternalMessageEvent msg = minecordBC.getFirst();
+                Bukkit.getPluginManager().callEvent(msg);
+                minecordBC.removeFirst();
+            }
+
+            if (countdowns.size() > 0) {
+                LinkedList<Countdown> scheduleDeletion = new LinkedList<>();
+                for (int i = 0; i < countdowns.size(); i++) {
+                    long time = countdowns.get(i).endTime - System.currentTimeMillis();
+                    if (time/1000.0 < countdowns.get(i).prevSecond) {
+                        countdowns.get(i).printSecond();
+                        if (countdowns.get(i).isFinished()) scheduleDeletion.add(countdowns.get(i));
+                    }
+                }
+                for (Countdown countdown : scheduleDeletion) {
+                    countdowns.remove(countdown);
+                }
+            }
+
         } catch (Exception e) {
             // Failsafe to prevent infinite loops
-            discord.sendDebug("SEVERE ERROR IN MAIN LOOP: " + e.getMessage());
+            discord.sendDebug("ERROR IN MAIN LOOP: " + e.getMessage());
             discord.printStackTrace(e.getStackTrace());
             if (outputQueue.size() > 0) outputQueue.removeFirst();
             if (commandQueue.size() > 0) commandQueue.removeFirst();
+            if (syncCommands.size() > 0) syncCommands.removeFirst();
+            if (minecordBC.size() > 0) minecordBC.removeFirst();
+            if (countdowns.size() > 0) countdowns.remove(0);
         }
+        queueUsed = false;
     }
 }

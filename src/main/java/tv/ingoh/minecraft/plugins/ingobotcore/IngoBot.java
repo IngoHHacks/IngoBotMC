@@ -10,12 +10,12 @@ public class IngoBot {
 
     public static void sendMessage(String message, DiscordInterface discord) {
         Bukkit.broadcastMessage("<IngoBot> " + message);
-        discord.sendChat("<IngoBot> " + message);
+        discord.sendChat("<IngoBot> " + message, true);
     }
 
     public static void sendMessage(String message, CommandSender user, DiscordInterface discord) {
         user.sendMessage(ChatColor.GRAY + "IngoBot -> YOU: " + ChatColor.RESET + message);
-        discord.sendChat("IngoBot -> " + user.getName() + ": " + message);
+        discord.sendChat("IngoBot -> " + user.getName() + ": " + message, false);
     }
 
 
@@ -27,14 +27,22 @@ public class IngoBot {
         }
 	}
 
+    public static void sendMessageToRaw(String string, DiscordInterface discord, boolean isPublic, String sender) {
+        if (isPublic) sendMessageRaw(string, discord);
+        else {
+            CommandSender s = Bukkit.getPlayer(sender);
+            if (s != null) sendMessageRaw(string, s, discord);
+        }
+	}
+
     public static void sendMessageRaw(String message, DiscordInterface discord) {
         Bukkit.broadcastMessage(message);
-        discord.sendChat(message);
+        discord.sendChat(message, false);
     }
 
     public static void sendMessageRaw(String message, CommandSender user, DiscordInterface discord) {
         user.sendMessage(message);
-        discord.sendChat("IngoBot -> " + user.getName() + ": " + message);
+        discord.sendChat("IngoBot -> " + user.getName() + ": " + message, false);
     }
 
     public static void sendMessageFromAsync(Main main, String message) {

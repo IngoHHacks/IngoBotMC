@@ -10,6 +10,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.LinkedList;
 
+import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.StringUtils;
+
+import net.md_5.bungee.api.ChatColor;
+import tv.ingoh.minecraft.plugins.ingobotcore.Config;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
@@ -21,7 +25,8 @@ public class AsyncWebThread implements Runnable {
     boolean end = false;
 
     public enum Type {
-        CHAT;
+        CHAT,
+        USERINFO;
     }
 
     final static String CHAT = "http://ingoh.tv/api.php?prompt&path=gpt2&text=%0";
@@ -29,10 +34,12 @@ public class AsyncWebThread implements Runnable {
     LinkedList<Query> queue = new LinkedList<>();
     DiscordInterface discord;
     Main main;
+    Config config;
 
     public AsyncWebThread(Main main, DiscordInterface discord) {
         this.discord = discord;
         this.main = main;
+        config = main.config;
     }
 
     @Override
@@ -41,22 +48,26 @@ public class AsyncWebThread implements Runnable {
         while (!end) {
             if (queue.size() > 0) {
                 Query q = queue.getFirst();
-                String text = q.args[0];
-                boolean finish = Boolean.parseBoolean(q.args[1]);
                 String user = q.user;
                 boolean isPublic = q.isPublic;
                 URL u;
                 switch (q.type) {
                     case CHAT:
                         try {
+                            String text = q.args[0];
+                            boolean finish = Boolean.parseBoolean(q.args[1]);
                             u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")));
                             ch.append(text, isPublic, user);
                             String res = executeConverse(u, finish, ch);
-                            if (finish) {
-                                ch.append(res.substring(2), isPublic, user);
-                                res = ("..." + res).replace("...>>", "...");
+                            if (res.charAt(0) != '[') {
+                                if (finish) {
+                                    ch.append(res.substring(2), isPublic, user);
+                                    res = ("..." + res).replace("...>>", "...");
+                                } else {
+                                    ch.append("\n" + res, isPublic, user);
+                                }
                             } else {
-                                ch.append("\n" + res, isPublic, user);
+                                ch.removeLast();
                             }
                             if (isPublic) {
                                 IngoBot.sendMessageFromAsync(main, res);
@@ -68,6 +79,26 @@ public class AsyncWebThread implements Runnable {
                             discord.printStackTrace(e.getStackTrace());
                         }
                         break;
+                    case USERINFO:
+                        String s;
+                        if (q.args.length > 0) {
+                            s = doUserinfoLookup(q.args[0]);
+                        } else {
+                            s = doUserinfoLookup(q.user);
+                        }
+                        String[] strs = s.split(",");
+                        if (strs.length >= 7) {
+                            String out = ChatColor.GOLD + "Username: " + ChatColor.YELLOW + strs[2] + "\n"
+                                       + ChatColor.GOLD + "Discord: " + ChatColor.YELLOW + strs[3] +  "\n"
+                                       + ChatColor.GOLD + "Request submitted at: " + ChatColor.YELLOW + strs[0];
+                            if (q.args.length > 0 && q.args[0].equals(q.user) && !isPublic && !strs[6].equals("")) {
+                                out += "\n" + ChatColor.GOLD + "PWC: " + ChatColor.YELLOW + strs[6];
+                            }
+                            IngoBot.sendMessageToRaw(out, discord, isPublic, q.user);
+                        } else {
+                            IngoBot.sendMessageToRaw(ChatColor.GOLD + "User not on whitelist spreadsheet.", discord, isPublic, q.user);
+                        }
+                         
                     default:
                         break;
 
@@ -80,6 +111,43 @@ public class AsyncWebThread implements Runnable {
                 end = true;
             }
         }
+    }
+
+    private String doRead(String cell) {
+        try {
+            URL url = new URL(config.getSpreadsheet() + "/exec?cell=" + cell + "&action=read");
+            InputStream in = url.openStream();
+            BufferedReader r = new BufferedReader(new InputStreamReader(in));
+            String s;
+            String text = "";
+            while ((s = r.readLine()) != null) {
+                text += s + "\n";
+            }
+            String result = StringUtils.substringBetween(text, "\\x22userHtml\\x22:\\x22", "\\x22,\\x22");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }   
+    }
+
+    
+    private String doUserinfoLookup(String username) {
+        try {
+            URL url = new URL(config.getSpreadsheet() +  "/exec?find=" + username + "&action=lookup");
+            InputStream in = url.openStream();
+            BufferedReader r = new BufferedReader(new InputStreamReader(in));
+            String s;
+            String text = "";
+            while ((s = r.readLine()) != null) {
+                text += s + "\n";
+            }
+            String result = StringUtils.substringBetween(text, "\\x22userHtml\\x22:\\x22", "\\x22,\\x22");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }   
     }
 
     private String executeConverse(URL url, boolean finish, ChatHistory ch) {
