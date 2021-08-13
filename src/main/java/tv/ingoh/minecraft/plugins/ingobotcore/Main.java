@@ -30,7 +30,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
-import org.bukkit.event.server.TabCompleteEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
@@ -122,7 +121,7 @@ public class Main extends JavaPlugin implements Listener {
             e.printStackTrace();
         }
         ingobotNPC = new EntityPlayer(nmsServer, nmsWorld, gameProfile);
-        ingobotNPC.setLocation(/*x*/0.5, /*y*/100, /*z*/0.5, /*yaw*/0, /*pitch*/0);
+        ingobotNPC.setLocation(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
     }
 
     @Override
