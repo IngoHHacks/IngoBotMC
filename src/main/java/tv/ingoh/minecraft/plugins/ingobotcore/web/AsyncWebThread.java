@@ -1,11 +1,8 @@
 package tv.ingoh.minecraft.plugins.ingobotcore.web;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.LinkedList;
@@ -155,59 +152,86 @@ public class AsyncWebThread implements Runnable {
             int tries = 0;
             boolean retry = true;
             while (retry && tries < 3) {
-                InputStream in = url.openStream();
-                BufferedReader r = new BufferedReader(new InputStreamReader(in));
-                String s = r.readLine();
-                if (s.contains("Timed out")) {
-                    if (tries == 2) {
-                        discord.sendDebug("ERROR01: No output");
-                        r.close();
-                        return "[TIMED OUT]\nError: No output";
-                    }
-                } else {
-                    String out = r.readLine().replace("<br>", "");
-                    if (tries == 2) {
-                        if (!Filter.isBanned(s) && !Filter.isBanned(out)) {
-                            if (finish && !s.equals(">>") && !s.equals(">> ")) {
-                                out = s;
-                            }
-                            discord.sendDebug(("..." + out).replace("...>>", "..."));
+                try {
+                    InputStream in = url.openStream();
+                    BufferedReader r = new BufferedReader(new InputStreamReader(in));
+                    String s = r.readLine().replace("<br>", "");
+                    if (s.contains("Timed out")) {
+                        if (tries == 2) {
+                            discord.sendDebug("NO OUTPUT");
                             r.close();
-                            return out;
-                        } else {
-                            discord.sendDebug("**Filtered: " + s + "**");
-                            discord.sendDebug("ERROR01: No output");
-                            r.close();
-                            return "[TIMED OUT]\nError: No output";
+                            return "[ERROR] Timed out: No output";
                         }
                     } else {
-                        if (finish && !s.equals(">>") && !s.equals(">> ") && !s.equals(">>?") && !s.equals(">>.")) {
-                            if (!Filter.isBanned(s)) {
-                                out = s;
-                                discord.sendDebug(("..." + out).replace("...>>", "..."));
-                                r.close();
-                                return out;
+                        String row2 = r.readLine();
+                        if (row2 != null) {
+                            String out = row2.replace("<br>", "");
+                            if (tries == 2) {
+                                if (!Filter.isBanned(s) && !Filter.isBanned(out)) {
+                                    if (finish && !s.equals(">>") && !s.equals(">> ")) {
+                                        out = s;
+                                    }
+                                    discord.sendDebug(("..." + out).replace("...>>", "..."));
+                                    r.close();
+                                    return out;
+                                } else {
+                                    discord.sendDebug("**Filtered: " + s + "**");
+                                    r.close();
+                                    return "[ERROR] Response contains prohibited word";
+                                }
                             } else {
-                                discord.sendDebug("**Filtered: " + s + "**");
+                                if (finish && !s.equals(">>") && !s.equals(">> ") && !s.equals(">>?") && !s.equals(">>.")) {
+                                    if (!Filter.isBanned(s)) {
+                                        out = s;
+                                        discord.sendDebug(("..." + out).replace("...>>", "..."));
+                                        r.close();
+                                        return out;
+                                    } else {
+                                        discord.sendDebug("**Filtered: " + s + "**");
+                                    }
+                                } else if (!finish && !out.equals(".") && !out.equals("?") && !out.equals("") && !out.equals(" ")) {
+                                    if (!Filter.isBanned(out)) {
+                                        discord.sendDebug(out);
+                                        r.close();
+                                        return out;
+                                    } else {
+                                        discord.sendDebug("**Filtered: " + s + "**");
+                                    }
+                                }
                             }
-                        } else if (!finish && !out.equals(".") && !out.equals("?") && !out.equals("") && !out.equals(" ")) {
-                            if (!Filter.isBanned(out)) {
-                                discord.sendDebug(out);
-                                r.close();
-                                return out;
-                            } else {
-                                discord.sendDebug("**Filtered: " + s + "**");
+                        } else {
+                            if (tries == 2) {
+                                String out = s;
+                                if (!Filter.isBanned(out)) {
+                                    discord.sendDebug(("..." + out).replace("...>>", "..."));
+                                    r.close();
+                                    return out;
+                                } else {
+                                    discord.sendDebug("**Filtered: " + s + "**");
+                                    r.close();
+                                    return "[ERROR] Response contains prohibited word";
+                                }
                             }
                         }
+                    }
+                    r.close();
+                } catch (Exception e) {
+                    discord.sendDebug("ERROR");
+                    discord.sendDebug("CODE: " + e.getMessage());
+                    if (tries == 2) {
+                        return "[ERROR] Response is invalid";
                     }
                 }
                 tries++;
-                r.close();
             }
-        } catch (Exception e) {    
-            discord.sendDebug("ERROR02: No response");
+        } catch (Exception e) {
+            discord.sendDebug("ERROR");
             discord.sendDebug("CODE: " + e.getMessage());
-            return "[NO RESPONSE] + \nError: " + e.getMessage();
+            if (e.getMessage().contains("HTTP response code: ")) {
+                String code = e.getMessage().split("HTTP response code: ",2)[1].split(" ", 2)[0];
+                return "[ERROR] Server error (Response code: " + code + ")";
+            }
+            else return "[ERROR] Response is invalid";
         }
         return "[NO RESPONSE]";     // Unused
     }
