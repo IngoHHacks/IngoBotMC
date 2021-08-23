@@ -1,16 +1,19 @@
 package tv.ingoh.minecraft.plugins.ingobotcore.command;
 
+import java.security.SecureRandom;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
-import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
-import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
-import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
-import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
-import tv.ingoh.util.calculator.Calculator;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
+import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
+import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
+import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
+import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
+import tv.ingoh.util.calculator.Calculator;
 
 public class CoreCommands {
 
@@ -31,6 +34,7 @@ public class CoreCommands {
             }
 
             switch (command.toUpperCase()) {
+                // TODO: Use objects instead of switch cases
                 case "CALC":
                     if (args.length > 0) {
                         String[] result = Calculator.calculate(argsF);
@@ -104,6 +108,86 @@ public class CoreCommands {
                     if (args.length > 0) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "0");
                     if (senderP != null) IngoBot.sendMessageTo("Ping: " + senderP.getPing(), discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
+                case "HOW":
+                    IngoBot.sendMessageTo("§LHOW", discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "BOLD":
+                case "ITALIC":
+                case "UNDERLINED":
+                case "STRIKETHROUGH":
+                case "OBFUSCATED":
+                    String formatted;
+                    if (args.length > 0) formatted = format(command.toLowerCase(), argsS);
+                    else formatted = format(command.toLowerCase(), sender);
+                    IngoBot.sendMessageTo(formatted, discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "EYES":
+                    IngoBot.sendMessageTo(":eyes:", discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "F":
+                    IngoBot.sendMessageTo("￿￿￿￿￿\n￿\n￿￿￿\n￿\n￿", discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "RQ":
+                    if (senderP != null) senderP.kickPlayer("Ragequit?");
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "CUM":
+                    if (senderP != null) senderP.playSound(senderP.getLocation(), Sound.BLOCK_HONEY_BLOCK_BREAK, 100, 0.0f);
+                    IngoBot.sendMessageTo("* " + sender + " cums", discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "RNG":
+                    SecureRandom rng = new SecureRandom();
+                    String out = "INVALID";
+                    if (args.length >= 1) {
+                        boolean list = false;
+                        boolean ints = true;
+                        if (args.length > 2) {
+                            list = true;
+                        } else {
+                            for (String string : args) {
+                                if (!string.matches("-?\\d+(\\.\\d+)?")) list = true;
+                                if (string.contains(".")) ints = false;
+                            }
+                        }
+                        if (!list) {
+                            try {
+                                if (args.length == 2) {
+                                    if (ints) {
+                                        int min = Math.min(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+                                        int max = Math.max(Integer.parseInt(args[0]), Integer.parseInt(args[1])) + 1;
+                                        out = Integer.toString(rng.nextInt(max - min) + min);
+                                    } else {
+                                        double min = Math.min(Double.parseDouble(args[0]), Double.parseDouble(args[1]));
+                                        double max = Math.max(Double.parseDouble(args[0]), Double.parseDouble(args[1]));
+                                        double pct = ((double)(rng.nextLong() / 2 + Long.MAX_VALUE / 2) / Long.MAX_VALUE);
+                                        out = Double.toString(pct * (max - min) + min);
+                                    }
+                                } else {
+                                    if (ints) {
+                                        out = Integer.toString(rng.nextInt(Integer.parseInt(args[0]) + 1));
+                                    } else {
+                                        double pct = ((double)(rng.nextLong() / 2 + Long.MAX_VALUE / 2) / Long.MAX_VALUE);
+                                        out = Double.toString(pct * Double.parseDouble(args[0]));
+                                    }
+                                }
+                            } catch (Exception e) {
+                                int index = rng.nextInt(args.length);
+                                out = args[index];
+                            }
+                        } else {
+                            int index = rng.nextInt(args.length);
+                            out = args[index];
+                        }
+                        IngoBot.sendMessageTo(ChatColor.AQUA + "RNG: " + out, discord, isPublic, sender);
+                    } else {
+                        return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1+");
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "69":
+                case "WIKISEARCH":
+                case "HELP":
+                // TODO
+                    IngoBot.sendMessageTo("Command to be added.", discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
                 default:
                     return new CommandResult(ResultType.NOTEXISTEXCEPTION, command);
 
@@ -111,6 +195,22 @@ public class CoreCommands {
         } catch (Exception e /* Catch all command errors */) {
             return new CommandResult(ResultType.EXECUTIONERROREXCEPTION, command);
         }
+    }
+
+    private static String format(String formatting, String msg) {
+        switch (formatting) {
+            case "bold":
+                return "§L" + msg;
+            case "italic":
+                return "§O" + msg;
+            case "underlined":
+                return "§N" + msg;
+            case "strikethrough":
+                return "§M" + msg;
+            case "obfuscated":
+                return "§K" + msg;
+        }
+        return msg;
     }
 
     public static void scheduleCommand(Main main, String string, String[] args, String name, WebThread wThread, boolean b, DiscordInterface discord) {

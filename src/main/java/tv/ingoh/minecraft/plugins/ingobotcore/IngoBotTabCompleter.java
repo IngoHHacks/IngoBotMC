@@ -13,12 +13,23 @@ import tv.ingoh.util.calculator.Calculator;
 public class IngoBotTabCompleter implements TabCompleter {
 
     final String[] COMMANDS = {
+        "bold",
         "c",
         "calc",
         "countdown",
+        "cum",
+        "eyes",
+        "f",
         "fs",
+        "how",
+        "italic",
+        "obfuscated",
         "ping",
-        "userinfo"
+        "rng",
+        "rq",
+        "strikethrough",
+        "underlined",
+        "userinfo",
     };
 
     final List<String> COUNTDOWNVALUES = List.of("3", "5", "10", "30", "60");
@@ -38,11 +49,6 @@ public class IngoBotTabCompleter implements TabCompleter {
     private List<String> finishArgs(String[] args) {
         LinkedList<String> possible = new LinkedList<>();
         switch (args[0]) {
-            case "c":
-            case "fs":
-            case "userinfo":
-            case "ping":
-            return null;
             case "calc":
             return finishCalc(args);
             case "countdown":
@@ -53,8 +59,9 @@ public class IngoBotTabCompleter implements TabCompleter {
                 return possible;
             }
             else return null;
+            default:
+            return null;
         }
-        return null;
     }
 
     private List<String> finishCommand(String string) {
