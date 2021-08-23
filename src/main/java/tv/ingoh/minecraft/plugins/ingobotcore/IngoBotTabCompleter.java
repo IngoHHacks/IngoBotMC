@@ -22,6 +22,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         "f",
         "fs",
         "how",
+        "image",
         "italic",
         "obfuscated",
         "ping",

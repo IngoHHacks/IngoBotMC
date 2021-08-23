@@ -125,7 +125,7 @@ public class CoreCommands {
                     IngoBot.sendMessageTo(":eyes:", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "F":
-                    IngoBot.sendMessageTo("￿￿￿￿￿\n￿\n￿￿￿\n￿\n￿", discord, isPublic, sender);
+                    IngoBot.sendMessageToRaw("￿￿￿\n￿\n￿￿￿\n￿\n￿", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "RQ":
                     if (senderP != null) senderP.kickPlayer("Ragequit?");
@@ -179,8 +179,13 @@ public class CoreCommands {
                         }
                         IngoBot.sendMessageTo(ChatColor.AQUA + "RNG: " + out, discord, isPublic, sender);
                     } else {
-                        return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1+");
+                        return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1+");
                     }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "IMAGE":
+                    if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
+                    else if (args.length > 1) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
+                    wt.add(new Query(Type.IMAGE, sender, new String[]{args[0]}, isPublic));
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "69":
                 case "WIKISEARCH":

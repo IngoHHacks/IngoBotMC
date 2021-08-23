@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 
 public class IngoBot {
@@ -27,11 +28,18 @@ public class IngoBot {
         }
 	}
 
-    public static void sendMessageToRaw(String string, DiscordInterface discord, boolean isPublic, String sender) {
-        if (isPublic) sendMessageRaw(string, discord);
+    public static void sendMessageToRaw(String message, DiscordInterface discord, boolean isPublic, String sender) {
+        if (isPublic) sendMessageRaw(message, discord);
         else {
             CommandSender s = Bukkit.getPlayer(sender);
-            if (s != null) sendMessageRaw(string, s, discord);
+            if (s != null) sendMessageRaw(message, s, discord);
+        }
+	}
+    public static void sendMessageToRaw(BaseComponent[] message, DiscordInterface discord, boolean isPublic, String sender) {
+        if (isPublic) sendMessageRaw(message, discord);
+        else {
+            CommandSender s = Bukkit.getPlayer(sender);
+            if (s != null) sendMessageRaw(message, s, discord);
         }
 	}
 
@@ -39,10 +47,17 @@ public class IngoBot {
         Bukkit.broadcastMessage(message);
         discord.sendChat(message, true);
     }
+    public static void sendMessageRaw(BaseComponent[] message, DiscordInterface discord) {
+        Bukkit.getServer().spigot().broadcast(message);
+    }
 
     public static void sendMessageRaw(String message, CommandSender user, DiscordInterface discord) {
         user.sendMessage(message);
-        discord.sendChat("IngoBot -> " + user.getName() + ": " + message, false);
+        discord.sendChat(message, false);
+    }
+
+    public static void sendMessageRaw(BaseComponent[] message, CommandSender user, DiscordInterface discord) {
+        user.spigot().sendMessage(message);
     }
 
     public static void sendMessageFromAsync(Main main, String message) {

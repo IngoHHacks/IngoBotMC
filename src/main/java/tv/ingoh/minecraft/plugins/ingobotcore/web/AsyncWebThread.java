@@ -1,5 +1,7 @@
 package tv.ingoh.minecraft.plugins.ingobotcore.web;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -7,9 +9,13 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.LinkedList;
 
+import javax.imageio.ImageIO;
+
 import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.StringUtils;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.chat.ComponentSerializer;
 import tv.ingoh.minecraft.plugins.ingobotcore.Config;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
@@ -23,6 +29,7 @@ public class AsyncWebThread implements Runnable {
 
     public enum Type {
         CHAT,
+        IMAGE,
         USERINFO;
     }
 
@@ -95,7 +102,31 @@ public class AsyncWebThread implements Runnable {
                         } else {
                             IngoBot.sendMessageToRaw(ChatColor.GOLD + "User not on whitelist spreadsheet.", discord, isPublic, q.user);
                         }
-                         
+                        break;
+                    case IMAGE:
+                        String url = q.args[0];
+                        try {
+                            int[][] pixels = getImage(url);
+                            String out = "[";
+                            if (pixels != null) {
+                                for (int i = 0; i < pixels[0].length; i++) {
+                                    for (int j = 0; j < pixels.length; j++) {
+                                        String hex = String.format("#%06X", (0xFFFFFF & pixels[j][i]));
+                                        if (!(i == 0 && j == 0)) out += ",";
+                                        out += "{\"text\":\"■\",\"color\":\"" + hex + "\"}";
+                                    }
+                                    if (i != pixels.length - 1) out += ",{\"text\":\"\\n\"}";
+                                }
+                                out += "]";
+                                BaseComponent[] bc = ComponentSerializer.parse(out);
+                                IngoBot.sendMessageToRaw(bc, discord, isPublic, q.user);
+                            } else {
+                                IngoBot.sendMessageToRaw(ChatColor.RED + "Failed to get image from <" + url + ">", discord, isPublic, q.user);
+                            }
+                        } catch (Exception e) {
+                            IngoBot.sendMessageToRaw(ChatColor.RED + "Failed to draw image from <" + url  + ">", discord, isPublic, q.user);
+                        }
+                        break;
                     default:
                         break;
 
@@ -107,6 +138,26 @@ public class AsyncWebThread implements Runnable {
             } catch (InterruptedException e) {
                 end = true;
             }
+        }
+    }
+
+    private static int[][] getImage(String url) {
+        try {
+            URL urlU = new URL(url);
+            BufferedImage img = ImageIO.read(urlU);
+            BufferedImage imgR = new BufferedImage(16, 16, img.getType());
+            Graphics2D g2d = imgR.createGraphics();
+            g2d.drawImage(img, 0, 0, 16, 16, 0, 0, img.getWidth(), img.getHeight(), null);
+            g2d.dispose();
+            int[][] pixels = new int[16][16];
+            for(int i = 0; i < 16; i++) {
+                for(int j = 0; j < 16; j++) {
+                    pixels[i][j] = imgR.getRGB(i,j);
+                }
+            }
+            return pixels;
+        } catch (Exception e) {
+            return null;
         }
     }
 
