@@ -762,7 +762,6 @@ public class Filter {
         };
 
         public static final String[] exactBanned = {
-                "test",
                 "kill me",
                 "kill yourself",
                 "kill myself",

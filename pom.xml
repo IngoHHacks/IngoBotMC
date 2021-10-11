@@ -5,7 +5,7 @@
 
   <groupId>tv.ingoh</groupId>
   <artifactId>IngoBotCore</artifactId>
-  <version>pre-3</version>
+  <version>pre-4</version>
 
   <name>ingoh-ingobotcore-plugin</name>
   <url>ingoh.tv</url>

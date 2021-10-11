@@ -28,6 +28,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         "ping",
         "rng",
         "rq",
+        "s",
         "strikethrough",
         "underlined",
         "userinfo",

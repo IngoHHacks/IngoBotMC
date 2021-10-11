@@ -17,6 +17,8 @@ import tv.ingoh.util.calculator.Calculator;
 
 public class CoreCommands {
 
+    static long imageCooldownTime = 0;
+
     public static CommandResult executeCommand(ScheduledCommand cmd) {
         return executeCommand(cmd.main, cmd.getString(), cmd.getArgs(), cmd.getSender(), cmd.getwThread(), cmd.isPublic(), cmd.getDiscord());
     }
@@ -60,7 +62,7 @@ public class CoreCommands {
                     } else {
                         discord.sendDebug("[" + sender + "] " + argsS);
                     }
-                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "false"}, isPublic));
+                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "false", "gpt2"}, isPublic));
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "FS":
                     if (!isPublic) {
@@ -69,7 +71,16 @@ public class CoreCommands {
                     } else {
                         discord.sendDebug("[" + sender + "] " + argsS + "...");
                     }
-                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true"}, isPublic));
+                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gpt2"}, isPublic));
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "S":
+                    if (!isPublic) {
+                        if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot:" + ChatColor.RESET + " [S] " + argsS + "...");
+                        discord.sendDebug("{" + sender + "} [S] " + argsS + "...");
+                    } else {
+                        discord.sendDebug("[" + sender + "] [S] " + argsS + "...");
+                    }
+                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gptneo"}, isPublic));
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "COUNTDOWN":
                     if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1+");
@@ -183,10 +194,15 @@ public class CoreCommands {
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "IMAGE":
-                    if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
-                    else if (args.length > 1) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
-                    wt.add(new Query(Type.IMAGE, sender, new String[]{args[0]}, isPublic));
-                    return new CommandResult(ResultType.SUCCESS, command);
+                    if (System.currentTimeMillis() > imageCooldownTime) {
+                        if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
+                        else if (args.length > 1) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
+                        wt.add(new Query(Type.IMAGE, sender, new String[]{args[0]}, isPublic));
+                        imageCooldownTime = System.currentTimeMillis() + 60000;
+                        return new CommandResult(ResultType.SUCCESS, command);
+                    } else {
+                        return new CommandResult(ResultType.COOLDOWNEXCEPTION, Integer.toString((int)(Math.ceil(System.currentTimeMillis() - 60000))));
+                    }
                 case "69":
                 case "WIKISEARCH":
                 case "HELP":

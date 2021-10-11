@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
@@ -33,7 +34,7 @@ public class AsyncWebThread implements Runnable {
         USERINFO;
     }
 
-    final static String CHAT = "http://ingoh.tv/api.php?prompt&path=gpt2&text=%0";
+    final static String CHAT = "https://ingoh.tv/api.php?prompt&path=%1&text=%0";
 
     LinkedList<Query> queue = new LinkedList<>();
     DiscordInterface discord;
@@ -60,15 +61,20 @@ public class AsyncWebThread implements Runnable {
                         try {
                             String text = q.args[0];
                             boolean finish = Boolean.parseBoolean(q.args[1]);
-                            u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")));
+                            String model = q.args[2];
+                            if (model.equals("gpt2")) u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
+                            else u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
                             ch.append(text, isPublic, user);
-                            String res = executeConverse(u, finish, ch);
+                            String res = executeConverse(u, finish, ch, model);
                             if (res.charAt(0) != '[') {
                                 if (finish) {
                                     ch.append(res.substring(2), isPublic, user);
                                     res = ("..." + res).replace("...>>", "...");
                                 } else {
                                     ch.append("\n" + res, isPublic, user);
+                                }
+                                if (model.equals("gptneo")) {
+                                    res = res.replaceFirst(Pattern.quote(text.replaceAll("[^\\x00-\\x7F]", "")), "");
                                 }
                             } else {
                                 ch.removeLast();
@@ -198,7 +204,7 @@ public class AsyncWebThread implements Runnable {
         }   
     }
 
-    private String executeConverse(URL url, boolean finish, ChatHistory ch) {
+    private String executeConverse(URL url, boolean finish, ChatHistory ch, String model) {
         try {
             int tries = 0;
             boolean retry = true;
@@ -214,9 +220,21 @@ public class AsyncWebThread implements Runnable {
                             return "[ERROR] Timed out: No output";
                         }
                     } else {
+                        // TODO: Fix bad repeating code here
                         String row2 = r.readLine();
+                        String row3 = r.readLine();
+                        String row4 = r.readLine();
+                        String row5 = r.readLine();
+                        String row6 = r.readLine();
                         if (row2 != null) {
                             String out = row2.replace("<br>", "");
+                            if (model.equals("gptneo")) {
+                                s += row2.replace("<br>","\n");
+                                if (row3 != null) s += row3.replace("<br>","\n");
+                                if (row4 != null) s += row4.replace("<br>","\n");
+                                if (row5 != null) s += row5.replace("<br>","\n");
+                                if (row6 != null) s += "\n...";
+                            }
                             if (tries == 2) {
                                 if (!Filter.isBanned(s) && !Filter.isBanned(out)) {
                                     if (finish && !s.equals(">>") && !s.equals(">> ")) {
@@ -267,10 +285,15 @@ public class AsyncWebThread implements Runnable {
                     }
                     r.close();
                 } catch (Exception e) {
-                    discord.sendDebug("ERROR");
-                    discord.sendDebug("CODE: " + e.getMessage());
+                    discord.sendDebug("Attempt " + tries + 1 + " failed");
                     if (tries == 2) {
-                        return "[ERROR] Response is invalid";
+                        discord.sendDebug("ERROR");
+                        discord.sendDebug("CODE: " + e.getMessage());
+                        if (e.getMessage().contains("HTTP response code: ")) {
+                            String code = e.getMessage().split("HTTP response code: ",2)[1].split(" ", 2)[0];
+                            return "[ERROR] Server error (Response code: " + code + ")";
+                        }
+                        else return "[ERROR] Response is invalid";
                     }
                 }
                 tries++;
@@ -286,6 +309,12 @@ public class AsyncWebThread implements Runnable {
         }
         return "[NO RESPONSE]";     // Unused
     }
+
+    private String executeConverse(URL url, boolean finish, String model) {
+        ChatHistory dummy = new ChatHistory();
+        return executeConverse(url, finish, dummy, model);
+    }
+
     public void add(Query q) {
         if (queue.size() < 20) {
             queue.add(q);
