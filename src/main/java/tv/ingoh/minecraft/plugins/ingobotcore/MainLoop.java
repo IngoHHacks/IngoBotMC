@@ -106,8 +106,12 @@ public class MainLoop implements Runnable {
             }
 
             if (whitelistQueue.size() > 0) {
-                whitelistQueue.getFirst().setWhitelisted(true);
-                discord.sendTo(discord.getChannels().spreadsheetChannel, "Whitelisted user " + whitelistQueue.getFirst().getName() + ", UUID: " + whitelistQueue.getFirst().getUniqueId());
+                if (!whitelistQueue.getFirst().isWhitelisted()) {
+                    whitelistQueue.getFirst().setWhitelisted(true);
+                    discord.sendTo(discord.getChannels().spreadsheetChannel, "Whitelisted user " + whitelistQueue.getFirst().getName() + ", UUID: " + whitelistQueue.getFirst().getUniqueId());
+                } else {
+                    discord.sendTo(discord.getChannels().spreadsheetChannel, "User " + whitelistQueue.getFirst().getName() + ", UUID: " + whitelistQueue.getFirst().getUniqueId() + " is already whitelisted");
+                }
                 whitelistQueue.removeFirst();
             }
 
