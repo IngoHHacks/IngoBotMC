@@ -18,5 +18,5 @@ public class Channels {
         watchListChannel = config.getcWatchlist();
         spreadsheetChannel = config.getcSpreadsheet();
     }
-    
+
 }

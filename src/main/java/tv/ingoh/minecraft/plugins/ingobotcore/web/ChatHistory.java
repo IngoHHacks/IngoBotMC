@@ -28,5 +28,5 @@ public class ChatHistory {
     public void removeLast() {
         if (history.size() > 0) history.removeLast();
     }
-    
+
 }

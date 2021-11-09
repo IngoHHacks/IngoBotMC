@@ -20,7 +20,7 @@ public class DiscordInterface {
     private Main main;
 
     public DiscordInterface(Config config, Main main) {
-        token = config.getToken();  
+        token = config.getToken();
         this.config = config;
         this.main = main;
     }
@@ -36,8 +36,6 @@ public class DiscordInterface {
 		discord.setAutoReconnect(false);
 		discord.shutdown();
 	}
-
-
     public void sendDebug(String out) {
         discord.getTextChannelById(channels.debugChannel).sendMessage(out).queue();
     }
@@ -56,7 +54,6 @@ public class DiscordInterface {
         }
     }
 
-    
     public void sendChat(String string, boolean sendMinecord) {
         discord.getTextChannelById(channels.textChannel).sendMessage(string).queue();
         if (sendMinecord && Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
@@ -64,9 +61,15 @@ public class DiscordInterface {
             main.scheduleMinecord(messageEvent);
         }
     }
-
-
     public void sendInfoChat(String string) {
         discord.getTextChannelById(channels.textChannel).sendMessage("[INFO] " + string).queue();
+    }
+
+    public Channels getChannels() {
+        return channels;
+    }
+
+    public void sendTo(long channelId, String string) {
+        discord.getTextChannelById(channelId).sendMessage(string).queue();
     }
 }

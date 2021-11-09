@@ -18,5 +18,5 @@ public interface Expressable extends Cloneable {
     double getNumber(double depth) throws ValueConversionException;
     void setNumber(double number) throws ValueSetException;
     boolean containsVariable(String name);
-    
+
 }

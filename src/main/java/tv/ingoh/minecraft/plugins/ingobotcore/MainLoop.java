@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
@@ -19,17 +20,19 @@ public class MainLoop implements Runnable {
     private volatile LinkedList<String> syncCommands;
     private volatile LinkedList<ExternalMessageEvent> minecordBC;
     private volatile ArrayList<Countdown> countdowns;
+    private volatile LinkedList<OfflinePlayer> whitelistQueue;
 
 
     boolean queueUsed;
     DiscordInterface discord;
 
-    public MainLoop(LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, LinkedList<ExternalMessageEvent> minecordBC, ArrayList<Countdown> countdowns, DiscordInterface discord) {
+    public MainLoop(LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, LinkedList<ExternalMessageEvent> minecordBC, ArrayList<Countdown> countdowns, LinkedList<OfflinePlayer> whitelistQueue, DiscordInterface discord) {
         this.outputQueue = outputQueue;
         this.commandQueue = commandQueue;
         this.syncCommands = syncCommands;
         this.minecordBC = minecordBC;
         this.countdowns = countdowns;
+        this.whitelistQueue = whitelistQueue;
         queueUsed = false;
         this.discord = discord;
     }
@@ -42,16 +45,18 @@ public class MainLoop implements Runnable {
         try {
             queueUsed = true;
             if (outputQueue.size() > 0) {
-                if (outputQueue.getFirst().receiver != null) {
-                    Player p = Bukkit.getPlayer(outputQueue.getFirst().receiver);
-                    if (p != null) p.sendMessage(outputQueue.getFirst().message);
-                    else Bukkit.getLogger().info(outputQueue.getFirst().message);
-                    discord.sendChat("IngoBot -> " + outputQueue.getFirst().receiver + ": " + outputQueue.getFirst().message, false);
-                } else {
-                    Bukkit.broadcastMessage(outputQueue.getFirst().message);
-                    discord.sendChat(outputQueue.getFirst().message);
+                if (System.currentTimeMillis() > outputQueue.getFirst().delay) {
+                    if (outputQueue.getFirst().receiver != null) {
+                        Player p = Bukkit.getPlayer(outputQueue.getFirst().receiver);
+                        if (p != null) p.sendMessage(outputQueue.getFirst().message);
+                        else Bukkit.getLogger().info(outputQueue.getFirst().message);
+                        discord.sendChat("IngoBot -> " + outputQueue.getFirst().receiver + ": " + outputQueue.getFirst().message, false);
+                    } else {
+                        Bukkit.broadcastMessage(outputQueue.getFirst().message);
+                        discord.sendChat(outputQueue.getFirst().message);
+                    }
+                    outputQueue.removeFirst();
                 }
-                outputQueue.removeFirst();
             }
 
             if (commandQueue.size() > 0) {
@@ -98,6 +103,12 @@ public class MainLoop implements Runnable {
                 for (Countdown countdown : scheduleDeletion) {
                     countdowns.remove(countdown);
                 }
+            }
+
+            if (whitelistQueue.size() > 0) {
+                whitelistQueue.getFirst().setWhitelisted(true);
+                discord.sendTo(discord.getChannels().spreadsheetChannel, "Whitelisted user " + whitelistQueue.getFirst().getName() + ", UUID: " + whitelistQueue.getFirst().getUniqueId());
+                whitelistQueue.removeFirst();
             }
 
         } catch (Exception e) {

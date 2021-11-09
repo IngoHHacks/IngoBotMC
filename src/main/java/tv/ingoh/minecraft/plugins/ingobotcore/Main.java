@@ -2,6 +2,7 @@ package tv.ingoh.minecraft.plugins.ingobotcore;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import com.mojang.authlib.properties.Property;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
@@ -45,7 +47,9 @@ import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CoreCommands;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ScheduledCommand;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
+import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
+import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
 
 public class Main extends JavaPlugin implements Listener {
 
@@ -62,6 +66,7 @@ public class Main extends JavaPlugin implements Listener {
     LinkedList<String> syncCommands;
     LinkedList<ExternalMessageEvent> minecordBC;
     ArrayList<Countdown> countdowns;
+    LinkedList<OfflinePlayer> whitelistQueue;
 
     @Override
     public void onEnable() {
@@ -74,6 +79,13 @@ public class Main extends JavaPlugin implements Listener {
             discord.start();
         } catch (LoginException e) {
             e.printStackTrace();
+        }
+        try {
+            // Wait for a second to load JDA
+            // TODO: Find workaround
+            Thread.sleep(1000);
+        } catch (InterruptedException e1) {
+            e1.printStackTrace();
         }
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("i").setTabCompleter(new IngoBotTabCompleter());
@@ -90,8 +102,9 @@ public class Main extends JavaPlugin implements Listener {
         syncCommands = new LinkedList<>();
         minecordBC = new LinkedList<>();
         countdowns = new ArrayList<>();
-        
-        mainLoop = new MainLoop(outputQueue, commandQueue, syncCommands, minecordBC, countdowns, discord);
+        whitelistQueue = new LinkedList<>();
+
+        mainLoop = new MainLoop(outputQueue, commandQueue, syncCommands, minecordBC, countdowns, whitelistQueue, discord);
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, mainLoop, 0, 1);
 
         // Entity
@@ -241,5 +254,40 @@ public class Main extends JavaPlugin implements Listener {
             pList.add(p.getName());
         }
         return pList;
+    }
+
+    public void whitelist(String ign) {
+        WhitelistThread t = new WhitelistThread(ign);
+        Bukkit.getScheduler().runTaskAsynchronously(this, t);
+    }
+
+    class WhitelistThread implements Runnable {
+
+        String ign;
+
+        public WhitelistThread(String ign) {
+            this.ign = ign;
+        }
+
+        @Override
+        public void run() {
+            try {
+                URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + ign);
+                InputStream in = url.openStream();
+                // Exists
+                if (in.available() > 0) {
+                    OfflinePlayer player = Bukkit.getOfflinePlayer(ign);
+                    whitelistQueue.add(player);
+                    wThread.add(new Query(Type.COLOR, null, new String[]{ign, "0", "255", "0"}, false));
+                } else {
+                    discord.sendTo(discord.getChannels().spreadsheetChannel, "Failed to whitelist " + ign + " (Name does not exist)");
+                    wThread.add(new Query(Type.COLOR, null, new String[]{ign, "255", "0", "255"}, false));
+                }
+            } catch (Exception e) {
+                discord.sendTo(discord.getChannels().spreadsheetChannel, "Whitelisted user " + ign + ", (Exception: " + e.getMessage() + ")");
+                wThread.add(new Query(Type.COLOR, null, new String[]{ign, "255", "0", "255"}, false));
+            }
+        }
+
     }
 }

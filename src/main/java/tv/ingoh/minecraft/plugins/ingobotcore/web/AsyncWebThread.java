@@ -7,11 +7,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.DateFormat;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.StringUtils;
 
 import net.md_5.bungee.api.ChatColor;
@@ -30,6 +33,7 @@ public class AsyncWebThread implements Runnable {
 
     public enum Type {
         CHAT,
+        COLOR,
         IMAGE,
         USERINFO;
     }
@@ -40,8 +44,11 @@ public class AsyncWebThread implements Runnable {
     DiscordInterface discord;
     Main main;
     Config config;
+    long nextTime;
 
     public AsyncWebThread(Main main, DiscordInterface discord) {
+        nextTime = (System.currentTimeMillis() + (7200000 + (long)(3600000* Math.random()) / 2) / 2);
+        discord.sendDebug("Next random message at " + DateFormat.getDateTimeInstance().format(nextTime));
         this.discord = discord;
         this.main = main;
         config = main.config;
@@ -51,38 +58,55 @@ public class AsyncWebThread implements Runnable {
     public void run() {
         ChatHistory ch = new ChatHistory();
         while (!end) {
+            if (System.currentTimeMillis() > nextTime) {
+                nextTime = (System.currentTimeMillis() + (7200000 + (long)(3600000* Math.random())) / 2);
+                discord.sendDebug("Next random message at " + DateFormat.getDateTimeInstance().format(nextTime));
+                String start = randomStartMessage();
+                if (Math.random() > 0.5) start = start.toLowerCase();
+                queue.add(new Query(Type.CHAT, null, new String[]{start, "true", "random"}, true));
+            }
             if (queue.size() > 0) {
                 Query q = queue.getFirst();
                 String user = q.user;
                 boolean isPublic = q.isPublic;
+                String[] args = q.args;
                 URL u;
                 switch (q.type) {
                     case CHAT:
                         try {
-                            String text = q.args[0];
-                            boolean finish = Boolean.parseBoolean(q.args[1]);
-                            String model = q.args[2];
+                            String text = args[0];
+                            boolean finish = Boolean.parseBoolean(args[1]);
+                            String model = args[2];
                             if (model.equals("gpt2")) u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
-                            else u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
-                            ch.append(text, isPublic, user);
-                            String res = executeConverse(u, finish, ch, model);
-                            if (res.charAt(0) != '[') {
-                                if (finish) {
-                                    ch.append(res.substring(2), isPublic, user);
-                                    res = ("..." + res).replace("...>>", "...");
+                            else if (model.equals("gptneo")) u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
+                            else u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", "gpt2"));
+                            if (model.equals("gpt2")) ch.append(text, isPublic, user);
+                            String res;
+                            if (model.equals("gpt2")) res = executeConverse(u, finish, ch, model, text);
+                            else res = executeConverse(u, finish, model, text);
+                            if (model.equals("random") && res.charAt(0) == '[') {
+                                if (res.charAt(0) != '[') {
+                                    if (model.equals("gpt2")) {
+                                        if (finish) {
+                                            ch.append(res.substring(2), isPublic, user);
+                                            res = ("..." + res).replace("...>>", "...");
+                                        } else {
+                                            ch.append("\n" + res, isPublic, user);
+                                        }
+                                    } else if (model.equals("gptneo")) {
+                                        res = res.replaceFirst(Pattern.quote(text.replaceAll("[^\\x00-\\x7F]", "")), "");
+                                    } else {
+                                        res = res.replaceFirst(Pattern.quote(">>"), text);
+                                    }
                                 } else {
-                                    ch.append("\n" + res, isPublic, user);
+                                    if (model.equals("gpt2")) ch.removeLast();
                                 }
-                                if (model.equals("gptneo")) {
-                                    res = res.replaceFirst(Pattern.quote(text.replaceAll("[^\\x00-\\x7F]", "")), "");
+                                if (isPublic) {
+                                    if (model.equals("random")) IngoBot.sendMessagesFromAsync(main, res);
+                                    else IngoBot.sendMessageFromAsync(main, res);
+                                } else {
+                                    IngoBot.sendMessageFromAsync(main, res, user);
                                 }
-                            } else {
-                                ch.removeLast();
-                            }
-                            if (isPublic) {
-                                IngoBot.sendMessageFromAsync(main, res);
-                            } else {
-                                IngoBot.sendMessageFromAsync(main, res, user);
                             }
                         } catch (Exception e) {
                             discord.sendDebug("Unhandled Exception: " + e.toString());
@@ -133,6 +157,8 @@ public class AsyncWebThread implements Runnable {
                             IngoBot.sendMessageToRaw(ChatColor.RED + "Failed to draw image from <" + url  + ">", discord, isPublic, q.user);
                         }
                         break;
+                    case COLOR:
+                        colorUser(args[0], args[1], args[2], args[3]);
                     default:
                         break;
 
@@ -144,6 +170,33 @@ public class AsyncWebThread implements Runnable {
             } catch (InterruptedException e) {
                 end = true;
             }
+        }
+    }
+
+    final static String[] STARTERS = {"I", "I", "I", "I'm", "I'm", "I'm", "I am", "I am", "I'll", "I will", "I am going to", "I'm going to", "I think", "I wish", "I saw", "I love", "I like", "I hate", "I know", "I didn't know", "I wonder", "What if", "Imagine if", "Did you know that", "How", "My", "My favorite", "Did I", "Can I", "Can you", "Should I", "May I", "You"};
+    final static String[] BEFORE_PERSON = {"I wonder if", "What if", "Imagine if", "Did you know that", "How did", "I didn't know that"};
+    final static String[] AFTER_PERSON = {"", "", "is", "is", "is", "will", "is going to", "loves", "likes", "hates", "knows"};
+
+    private String randomStartMessage() {
+        if (Math.random() > 0.5) {
+            return STARTERS[(int)(Math.random() * STARTERS.length)];
+        } else {
+            if (Math.random() > 0.5) {
+                return BEFORE_PERSON[(int)(Math.random() * BEFORE_PERSON.length)] + " " + randomPerson();
+            } else {
+                return randomPerson() + " " + AFTER_PERSON[(int)(Math.random() * AFTER_PERSON.length)];
+            }
+        }
+    }
+
+    final static String[] NAMES = {"Ingo", "Vic", "Stars", "Simple", "tangy", "misplet", "matthew", "Omega", "plex", "arc", "Spooked", "snake", "Veritas", "Timmy_ir", "captainNeda", "Pyro", "Racoonix", "s0und_", "nathan", "B_jamin", "NkdSquid", "frigateorpheon", "bl1ngbl0ng", "HAX0R", "Cha0s", "glitch", "Samuel", "FoxyProxy", "Tub", "DoubleL", "KitLemonfoot"};
+
+    private String randomPerson() {
+        if (Math.random() > 0.5) {
+            return NAMES[(int)(Math.random() * NAMES.length)];
+        } else {
+            Object[] p = Bukkit.getWhitelistedPlayers().toArray();
+            return ((OfflinePlayer)(p[(int)(Math.random() * p.length)])).getName();
         }
     }
 
@@ -182,10 +235,28 @@ public class AsyncWebThread implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
-        }   
+        }
     }
 
-    
+    private String colorUser(String user, String r, String g, String b) {
+        try {
+            URL url = new URL(config.getSpreadsheet() + "/exec?action=colorl&find=" + user + "&r=" + r + "&g=" + g + "&b=" + b);
+            InputStream in = url.openStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(in));
+            String s;
+            String text = "";
+            while ((s = rd.readLine()) != null) {
+                text += s + "\n";
+            }
+            String result = StringUtils.substringBetween(text, "\\x22userHtml\\x22:\\x22", "\\x22,\\x22");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
     private String doUserinfoLookup(String username) {
         try {
             URL url = new URL(config.getSpreadsheet() +  "/exec?find=" + username + "&action=lookup");
@@ -201,10 +272,10 @@ public class AsyncWebThread implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
-        }   
+        }
     }
 
-    private String executeConverse(URL url, boolean finish, ChatHistory ch, String model) {
+    private String executeConverse(URL url, boolean finish, ChatHistory ch, String model, String msg) {
         try {
             int tries = 0;
             boolean retry = true;
@@ -213,54 +284,43 @@ public class AsyncWebThread implements Runnable {
                     InputStream in = url.openStream();
                     BufferedReader r = new BufferedReader(new InputStreamReader(in));
                     String s = r.readLine().replace("<br>", "");
-                    if (s.contains("Timed out")) {
-                        if (tries == 2) {
-                            discord.sendDebug("NO OUTPUT");
-                            r.close();
-                            return "[ERROR] Timed out: No output";
-                        }
-                    } else {
-                        // TODO: Fix bad repeating code here
-                        String row2 = r.readLine();
-                        String row3 = r.readLine();
-                        String row4 = r.readLine();
-                        String row5 = r.readLine();
-                        String row6 = r.readLine();
-                        if (row2 != null) {
-                            String out = row2.replace("<br>", "");
-                            if (model.equals("gptneo")) {
-                                s += row2.replace("<br>","\n");
-                                if (row3 != null) s += row3.replace("<br>","\n");
-                                if (row4 != null) s += row4.replace("<br>","\n");
-                                if (row5 != null) s += row5.replace("<br>","\n");
-                                if (row6 != null) s += "\n...";
-                            }
+                    if (model.equals("random")) {
+                        if (s.contains("Timed out")) {
                             if (tries == 2) {
-                                if (!Filter.isBanned(s) && !Filter.isBanned(out)) {
-                                    if (finish && !s.equals(">>") && !s.equals(">> ")) {
+                                discord.sendDebug("NO OUTPUT");
+                                r.close();
+                                return "[ERROR] Timed out: No output";
+                            }
+                        } else {
+                            // TODO: Fix bad repeating code here
+                            String row1 = s;
+                            String row2 = r.readLine();
+                            String row3 = r.readLine();
+                            String row4 = r.readLine();
+                            String row5 = r.readLine();
+                            String row6 = r.readLine();
+                            String out = row1.replace("<br>", "");
+                            if (row3 != null) s += row2.replace("<br>","\n");
+                            if (row4 != null) s += row3.replace("<br>","\n");
+                            if (row5 != null) s += row4.replace("<br>","\n");
+                            if (row6 != null) s += row5.replace("<br>","\n");
+                            if (tries == 2) {
+                                if (!Filter.isBanned(s)) {
+                                    if (row1.equals(">>") && !row1.equals(">> ")) {
                                         out = s;
                                     }
-                                    discord.sendDebug(("..." + out).replace("...>>", "..."));
+                                    discord.sendDebug(msg + out);
                                     r.close();
-                                    return out;
                                 } else {
                                     discord.sendDebug("**Filtered: " + s + "**");
                                     r.close();
                                     return "[ERROR] Response contains prohibited word";
                                 }
                             } else {
-                                if (finish && !s.equals(">>") && !s.equals(">> ") && !s.equals(">>?") && !s.equals(">>.")) {
+                                if (!row1.equals(">>") && !row1.equals(">> ") && !row1.equals(">>?") && !row1.equals(">>!") && !row1.equals(">>.") && !row1.equals(">>,")) {
                                     if (!Filter.isBanned(s)) {
                                         out = s;
-                                        discord.sendDebug(("..." + out).replace("...>>", "..."));
-                                        r.close();
-                                        return out;
-                                    } else {
-                                        discord.sendDebug("**Filtered: " + s + "**");
-                                    }
-                                } else if (!finish && !out.equals(".") && !out.equals("?") && !out.equals("") && !out.equals(" ")) {
-                                    if (!Filter.isBanned(out)) {
-                                        discord.sendDebug(out);
+                                        discord.sendDebug(msg + out);
                                         r.close();
                                         return out;
                                     } else {
@@ -268,17 +328,75 @@ public class AsyncWebThread implements Runnable {
                                     }
                                 }
                             }
-                        } else {
+                        }
+                    } else {
+                        if (s.contains("Timed out")) {
                             if (tries == 2) {
-                                String out = s;
-                                if (!Filter.isBanned(out)) {
-                                    discord.sendDebug(("..." + out).replace("...>>", "..."));
-                                    r.close();
-                                    return out;
+                                discord.sendDebug("NO OUTPUT");
+                                r.close();
+                                return "[ERROR] Timed out: No output";
+                            }
+                        } else {
+                            // TODO: Fix bad repeating code here
+                            String row2 = r.readLine();
+                            String row3 = r.readLine();
+                            String row4 = r.readLine();
+                            String row5 = r.readLine();
+                            String row6 = r.readLine();
+                            if (row2 != null) {
+                                String out = row2.replace("<br>", "");
+                                if (model.equals("gptneo")) {
+                                    s += row2.replace("<br>","\n");
+                                    if (row3 != null) s += row3.replace("<br>","\n");
+                                    if (row4 != null) s += row4.replace("<br>","\n");
+                                    if (row5 != null) s += row5.replace("<br>","\n");
+                                    if (row6 != null) s += "\n...";
+                                }
+                                if (tries == 2) {
+                                    if (!Filter.isBanned(s) && !Filter.isBanned(out)) {
+                                        if (finish && !s.equals(">>") && !s.equals(">> ")) {
+                                            out = s;
+                                        }
+                                        discord.sendDebug(("..." + out).replace("...>>", "..."));
+                                        r.close();
+                                    } else {
+                                        discord.sendDebug("**Filtered: " + s + "**");
+                                        r.close();
+                                        return "[ERROR] Response contains prohibited word";
+                                    }
                                 } else {
-                                    discord.sendDebug("**Filtered: " + s + "**");
-                                    r.close();
-                                    return "[ERROR] Response contains prohibited word";
+                                    if (finish && !s.equals(">>") && !s.equals(">> ") && !s.equals(">>?") && !s.equals(">>!") && !s.equals(">>.") && !s.equals(">>,")) {
+                                        if (!Filter.isBanned(s)) {
+                                            out = s;
+                                            discord.sendDebug(("..." + out).replace("...>>", "..."));
+                                            r.close();
+                                            return out;
+                                        } else {
+                                            discord.sendDebug("**Filtered: " + s + "**");
+                                        }
+                                    } else if (!finish && !out.equals(".") && !out.equals("?") && !out.equals("!") && !out.equals("") && !out.equals(" ") && !out.equals(",")) {
+                                        if (!Filter.isBanned(out)) {
+                                            discord.sendDebug(out);
+                                            r.close();
+                                            return out;
+                                        } else {
+                                            discord.sendDebug("**Filtered: " + s + "**");
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (tries == 2) {
+                                    String out = s;
+                                    if (!Filter.isBanned(out)) {
+                                        if (model.equals("random")) discord.sendDebug((msg +  out));
+                                        else discord.sendDebug(("..." + out).replace("...>>", "..."));
+                                        r.close();
+                                        return out;
+                                    } else {
+                                        discord.sendDebug("**Filtered: " + s + "**");
+                                        r.close();
+                                        return "[ERROR] Response contains prohibited word";
+                                    }
                                 }
                             }
                         }
@@ -310,9 +428,9 @@ public class AsyncWebThread implements Runnable {
         return "[NO RESPONSE]";     // Unused
     }
 
-    private String executeConverse(URL url, boolean finish, String model) {
+    private String executeConverse(URL url, boolean finish, String model, String msg) {
         ChatHistory dummy = new ChatHistory();
-        return executeConverse(url, finish, dummy, model);
+        return executeConverse(url, finish, dummy, model, msg);
     }
 
     public void add(Query q) {

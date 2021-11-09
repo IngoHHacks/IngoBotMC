@@ -12,7 +12,6 @@ public class CalculatorTest {
 
     // Manual testing
     public static void main(String[] args) {
-
         Scanner s = new Scanner(System.in);
         String line = "";
         while (!line.equals("end")) {
@@ -27,7 +26,7 @@ public class CalculatorTest {
         }
         s.close();
     }
-    
+
     @Test
     public void evaluateSimpleAddition() {
         assertEquals("69", Calculator.calculate("41+28")[0]);
@@ -37,7 +36,7 @@ public class CalculatorTest {
     public void evaluateSimpleParentheses() {
         assertEquals("28", Calculator.calculate("2*(2+3*(2/(1/2")[0]);
     }
-    
+
     @Test
     public void evaluateSimpleParentheses2() {
         assertEquals("466", Calculator.calculate("2*(5+3*(2-4)*(12-5*(10)))")[0]);

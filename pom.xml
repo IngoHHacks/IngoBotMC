@@ -5,7 +5,7 @@
 
   <groupId>tv.ingoh</groupId>
   <artifactId>IngoBotCore</artifactId>
-  <version>pre-4</version>
+  <version>pre-5</version>
 
   <name>ingoh-ingobotcore-plugin</name>
   <url>ingoh.tv</url>
@@ -28,8 +28,8 @@
     <repository>
       <id>dv8tion</id>
       <name>m2-dv8tion</name>
-    <url>https://m2.dv8tion.net/releases</url>
-</repository>
+      <url>https://m2.dv8tion.net/releases</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>

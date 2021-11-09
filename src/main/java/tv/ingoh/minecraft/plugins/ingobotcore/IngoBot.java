@@ -60,6 +60,21 @@ public class IngoBot {
         user.spigot().sendMessage(message);
     }
 
+    public static void sendMessagesFromAsync(Main main, String messages) {
+        String[] msgs = messages.split("\n");
+        main.scheduleMessage(new Message("<IngoBot> " + msgs[0], null));
+        int i = 1;
+        while (msgs.length > i) {
+            if (Math.random() > 0.65) break;
+            main.scheduleMessage(new Message("<" + randomBotName() + "> " + msgs[i], null, 3000 * i + (int)(Math.random() * 1000)));
+            i++;
+        }
+    }
+    final static String[] NAMES = {"IngoBot", "OtherBot", "RandomBot", "IdiotBot", "BestBot", "MineBot", "ArbitraryBot", "IngoBot 2", "NotIngoBot", "IngoHBot", "StarsBot", "VicBot"};
+    private static String randomBotName() {
+        return NAMES[(int)(Math.random() * NAMES.length)];
+    }
+
     public static void sendMessageFromAsync(Main main, String message) {
         main.scheduleMessage(new Message("<IngoBot> " + message, null));
     }
