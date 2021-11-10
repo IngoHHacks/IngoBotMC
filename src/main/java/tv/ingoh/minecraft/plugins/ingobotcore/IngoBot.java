@@ -98,5 +98,5 @@ public class IngoBot {
     public static void sendMessageRawFromAsync(Main main, String message, String user) {
         main.scheduleMessage(new Message(message, user));
     }
-    
+
 }

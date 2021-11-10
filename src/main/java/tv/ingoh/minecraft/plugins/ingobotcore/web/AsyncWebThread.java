@@ -84,29 +84,9 @@ public class AsyncWebThread implements Runnable {
                             String res;
                             if (model.equals("gpt2")) res = executeConverse(u, finish, ch, model, text);
                             else res = executeConverse(u, finish, model, text);
-                            if (model.equals("random") && res.charAt(0) == '[') {
-                                if (res.charAt(0) != '[') {
-                                    if (model.equals("gpt2")) {
-                                        if (finish) {
-                                            ch.append(res.substring(2), isPublic, user);
-                                            res = ("..." + res).replace("...>>", "...");
-                                        } else {
-                                            ch.append("\n" + res, isPublic, user);
-                                        }
-                                    } else if (model.equals("gptneo")) {
-                                        res = res.replaceFirst(Pattern.quote(text.replaceAll("[^\\x00-\\x7F]", "")), "");
-                                    } else {
-                                        res = res.replaceFirst(Pattern.quote(">>"), text);
-                                    }
-                                } else {
-                                    if (model.equals("gpt2")) ch.removeLast();
-                                }
-                                if (isPublic) {
-                                    if (model.equals("random")) IngoBot.sendMessagesFromAsync(main, res);
-                                    else IngoBot.sendMessageFromAsync(main, res);
-                                } else {
-                                    IngoBot.sendMessageFromAsync(main, res, user);
-                                }
+                            if (model.equals("random") && res.charAt(0) != '[') {
+                                res = res.replaceFirst(Pattern.quote(">>"), text);
+                                IngoBot.sendMessagesFromAsync(main, res);
                             }
                         } catch (Exception e) {
                             discord.sendDebug("Unhandled Exception: " + e.toString());
