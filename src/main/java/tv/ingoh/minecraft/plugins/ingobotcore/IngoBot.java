@@ -65,7 +65,7 @@ public class IngoBot {
         main.scheduleMessage(new Message("<IngoBot> " + msgs[0], null));
         int i = 1;
         while (msgs.length > i) {
-            if (Math.random() > 0.65) break;
+            if (Math.random() > 0.35) break;
             main.scheduleMessage(new Message("<" + randomBotName() + "> " + msgs[i], null, 3000 * i + (int)(Math.random() * 1000)));
             i++;
         }
