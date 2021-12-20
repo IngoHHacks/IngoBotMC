@@ -1,7 +1,7 @@
 package tv.ingoh.util;
 
 public class Pluralize {
-    
+
     /**
      * @param count An integer
      * @return {@code "is"} if count == 1, {@code "are"} if count != 1

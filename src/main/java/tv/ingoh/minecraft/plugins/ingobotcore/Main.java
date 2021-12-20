@@ -23,9 +23,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_18_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_18_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_18_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -134,7 +134,8 @@ public class Main extends JavaPlugin implements Listener {
             e.printStackTrace();
         }
         ingobotNPC = new EntityPlayer(nmsServer, nmsWorld, gameProfile);
-        ingobotNPC.setLocation(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
+        // TODO: Check
+        ingobotNPC.b(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
     }
 
     @Override
@@ -214,8 +215,8 @@ public class Main extends JavaPlugin implements Listener {
 
     public void createNPCFor(EntityPlayer npc, Player target) {
         PlayerConnection connection = ((CraftPlayer)target).getHandle().b; /* playerconnection */
-        connection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a /* add */, npc));
-        connection.sendPacket(new PacketPlayOutNamedEntitySpawn(npc));
+        connection.a(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a /* add */, npc));
+        connection.a(new PacketPlayOutNamedEntitySpawn(npc));
     }
 
     public void sendCommand(String contentRaw) {

@@ -5,7 +5,7 @@
 
   <groupId>tv.ingoh</groupId>
   <artifactId>IngoBotCore</artifactId>
-  <version>pre-5</version>
+  <version>pre-6</version>
 
   <name>ingoh-ingobotcore-plugin</name>
   <url>ingoh.tv</url>
@@ -13,8 +13,8 @@
   <packaging>jar</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>16</maven.compiler.source>
-    <maven.compiler.target>16</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
   </properties>
   <repositories>
     <repository>
@@ -40,14 +40,22 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.17-R0.1-SNAPSHOT</version>
+      <version>1.18.1-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.17</version>
-      <scope>provided</scope>
+      <version>1.18.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../spigot/spigot-1.18.1-R0.1-SNAPSHOT.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.mojang</groupId>
+      <artifactId>authlib</artifactId>
+      <version>3.2.38</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../spigot/authlib-3.2.38.jar</systemPath>
     </dependency>
     <dependency>
 			<groupId>org.junit.jupiter</groupId>

@@ -13,9 +13,9 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.StringUtils;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -84,9 +84,17 @@ public class AsyncWebThread implements Runnable {
                             String res;
                             if (model.equals("gpt2")) res = executeConverse(u, finish, ch, model, text);
                             else res = executeConverse(u, finish, model, text);
-                            if (model.equals("random") && res.charAt(0) != '[') {
-                                res = res.replaceFirst(Pattern.quote(">>"), text);
-                                IngoBot.sendMessagesFromAsync(main, res);
+                            if (model.equals("random")) {
+                                if (res.charAt(0) != '[') {
+                                    res = res.replaceFirst(Pattern.quote(">>"), text);
+                                    IngoBot.sendMessagesFromAsync(main, res);
+                                }
+                            } else {
+                                if (isPublic) {
+                                    IngoBot.sendMessageFromAsync(main, res);
+                                } else {
+                                    IngoBot.sendMessageFromAsync(main, res, user);
+                                }
                             }
                         } catch (Exception e) {
                             discord.sendDebug("Unhandled Exception: " + e.toString());
@@ -383,7 +391,7 @@ public class AsyncWebThread implements Runnable {
                     }
                     r.close();
                 } catch (Exception e) {
-                    discord.sendDebug("Attempt " + tries + 1 + " failed");
+                    discord.sendDebug("Attempt " + (tries + 1) + " failed");
                     if (tries == 2) {
                         discord.sendDebug("ERROR");
                         discord.sendDebug("CODE: " + e.getMessage());
