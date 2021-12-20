@@ -5,9 +5,11 @@ import java.security.SecureRandom;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
+import tv.ingoh.minecraft.plugins.ingobotcore.IngoBotTabCompleter;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
@@ -236,5 +238,14 @@ public class CoreCommands {
 
     public static void scheduleCommand(Main main, String string, String[] args, String name, WebThread wThread, boolean b, DiscordInterface discord) {
         main.scheduleCommand(new ScheduledCommand(main, string, args, name, wThread, b, discord));
+    }
+
+    public static void printCommandList(String sender, boolean isPublic, DiscordInterface discord) {
+        String s = "List of commands:\n";
+        for (String command : IngoBotTabCompleter.COMMANDS) {
+            if (!s.equals("List of commands:\n")) s += ", ";
+            s += command;
+        }
+        IngoBot.sendMessageTo(s, discord, isPublic, sender);
     }
 }

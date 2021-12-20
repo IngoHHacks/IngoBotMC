@@ -81,9 +81,9 @@ public class Main extends JavaPlugin implements Listener {
             e.printStackTrace();
         }
         try {
-            // Wait for a second to load JDA
+            // Wait for three seconds to load JDA
             // TODO: Find workaround
-            Thread.sleep(1000);
+            Thread.sleep(3000);
         } catch (InterruptedException e1) {
             e1.printStackTrace();
         }
@@ -151,15 +151,19 @@ public class Main extends JavaPlugin implements Listener {
         discord.sendChat("<" + sender.getName() + "> /" + label + " " + argsToString(args), false);
         if (label.equalsIgnoreCase("i")) {
             CommandResult result;
-            result = CoreCommands.executeCommand(this, args[0], Arrays.copyOfRange(args, 1, args.length), sender.getName(), wThread, false, discord);
-            if (!result.isSuccessful()) {
-                IngoBot.sendMessageRaw(ChatColor.RED + result.toString(), sender, discord);
-                if (result.isUnhandledException()) {
-                    result.printStackTrace(discord);
+            if (args.length > 0) {
+                result = CoreCommands.executeCommand(this, args[0], Arrays.copyOfRange(args, 1, args.length), sender.getName(), wThread, false, discord);
+                if (!result.isSuccessful()) {
+                    IngoBot.sendMessageRaw(ChatColor.RED + result.toString(), sender, discord);
+                    if (result.isUnhandledException()) {
+                        result.printStackTrace(discord);
+                    }
+                    return false;
+                } else {
+                    return true;
                 }
-                return false;
             } else {
-                return true;
+                CoreCommands.printCommandList(sender.getName(), false, discord);
             }
         }
         return true;
