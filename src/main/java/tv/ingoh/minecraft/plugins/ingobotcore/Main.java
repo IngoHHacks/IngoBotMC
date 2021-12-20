@@ -284,7 +284,7 @@ public class Main extends JavaPlugin implements Listener {
                     wThread.add(new Query(Type.COLOR, null, new String[]{ign, "255", "0", "255"}, false));
                 }
             } catch (Exception e) {
-                discord.sendTo(discord.getChannels().spreadsheetChannel, "Whitelisted user " + ign + ", (Exception: " + e.getMessage() + ")");
+                discord.sendTo(discord.getChannels().spreadsheetChannel, "Failed to whitelist " + ign + ", (Exception: " + e.getMessage() + ")");
                 wThread.add(new Query(Type.COLOR, null, new String[]{ign, "255", "0", "255"}, false));
             }
         }

@@ -47,7 +47,7 @@ public class AsyncWebThread implements Runnable {
     long nextTime;
 
     public AsyncWebThread(Main main, DiscordInterface discord) {
-        nextTime = (System.currentTimeMillis() + (7200000 + (long)(3600000* Math.random()) / 2) / 2);
+        nextTime = (System.currentTimeMillis() + (7200000 + (long)(36000000 * Math.random()) / 2) / 2);
         discord.sendDebug("Next random message at " + DateFormat.getDateTimeInstance().format(nextTime));
         this.discord = discord;
         this.main = main;
@@ -59,7 +59,7 @@ public class AsyncWebThread implements Runnable {
         ChatHistory ch = new ChatHistory();
         while (!end) {
             if (System.currentTimeMillis() > nextTime) {
-                nextTime = (System.currentTimeMillis() + (7200000 + (long)(3600000* Math.random())) / 2);
+                nextTime = (System.currentTimeMillis() + (7200000 + (long)(36000000 * Math.random())) / 2);
                 discord.sendDebug("Next random message at " + DateFormat.getDateTimeInstance().format(nextTime));
                 String start = randomStartMessage();
                 if (Math.random() > 0.5) start = start.toLowerCase();

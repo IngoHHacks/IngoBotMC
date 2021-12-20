@@ -1,5 +1,7 @@
 package tv.ingoh.minecraft.plugins.ingobotcore.discord;
 
+import java.util.regex.Pattern;
+
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -34,7 +36,7 @@ public class Events extends ListenerAdapter {
     public void onMessageReactionAdd(MessageReactionAddEvent event) {
         try {
             if ((long)(event.getChannel().getIdLong()) == (channels.spreadsheetChannel) && event.getReaction().getReactionEmote().getName().equals("✅")) {
-                String ign = event.getReaction().getTextChannel().retrieveMessageById(event.getMessageId()).complete().getContentRaw().split("`Minecraft Username:` **")[1].split("**\n")[0].trim();
+                String ign = event.getReaction().getTextChannel().retrieveMessageById(event.getMessageId()).complete().getContentRaw().split(Pattern.quote("`Minecraft Username:` **"))[1].split(Pattern.quote("**\n"))[0].trim();
                 m.whitelist(ign);
             }
         } catch (Exception ignore) {}
