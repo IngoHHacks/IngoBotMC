@@ -80,9 +80,19 @@ public class AsyncWebThread implements Runnable {
                             if (model.equals("gpt2")) u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
                             else if (model.equals("gptneo")) u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
                             else u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", "gpt2"));
-                            if (model.equals("gpt2")) ch.append(text, isPublic, user);
                             String res;
-                            if (model.equals("gpt2")) res = executeConverse(u, finish, ch, model, text);
+                            if (model.equals("gpt2")) {
+                                res = executeConverse(u, finish, ch, model, text);
+                                if (res.charAt(0) != '[') {
+                                    if (finish) {
+                                        ch.append(res.replaceFirst(Pattern.quote(">>"), text), isPublic, user);
+                                    } else {
+                                        ch.append(text, isPublic, user);
+                                        ch.append(res, isPublic, user);
+                                    }
+
+                                }
+                            }
                             else res = executeConverse(u, finish, model, text);
                             if (model.equals("random")) {
                                 if (res.charAt(0) != '[') {

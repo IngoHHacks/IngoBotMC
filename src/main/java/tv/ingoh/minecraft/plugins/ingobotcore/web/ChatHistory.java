@@ -7,8 +7,8 @@ public class ChatHistory {
     private LinkedList<HistoryEntry> history = new LinkedList<>();
 
     public void append(String string, boolean isPublic, String user) {
-        if (isPublic) history.add(new HistoryEntry(string, "*"));
-        else history.add(new HistoryEntry(string, user));
+        if (isPublic) history.add(new HistoryEntry(string.endsWith("\n") ? string : string + "\n", "*"));
+        else history.add(new HistoryEntry(string.endsWith("\n") ? string : string + "\n", user));
         if (history.size() > 50) history.removeFirst();
     }
 
