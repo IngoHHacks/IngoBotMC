@@ -2,7 +2,7 @@ package tv.ingoh.minecraft.plugins.ingobotcore.minecord;
 
 import org.bukkit.Bukkit;
 
-import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
+import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 
 public class MinecordInterface {
 

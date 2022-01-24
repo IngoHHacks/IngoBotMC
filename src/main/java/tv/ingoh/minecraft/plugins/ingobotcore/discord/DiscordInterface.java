@@ -4,7 +4,7 @@ import javax.security.auth.login.LoginException;
 
 import org.bukkit.Bukkit;
 
-import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
+import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;

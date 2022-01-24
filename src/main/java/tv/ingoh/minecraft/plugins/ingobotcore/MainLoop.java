@@ -7,7 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
+import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CoreCommands;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ScheduledCommand;

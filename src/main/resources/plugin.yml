@@ -2,8 +2,8 @@ main: tv.ingoh.minecraft.plugins.ingobotcore.Main
 name: IngoBotCore
 author: IngoHHacks
 softdepend: [Minecord]
-version: 0.6
-api-version: 1.17
+version: 0.6.2
+api-version: 1.18
 commands:
  i:
   description: All IngoBot commands

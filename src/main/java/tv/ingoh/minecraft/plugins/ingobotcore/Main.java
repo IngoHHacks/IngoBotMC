@@ -34,7 +34,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import io.github.starsdown64.Minecord.api.ExternalMessageEvent;
+import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
 import net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo;
 import net.minecraft.server.MinecraftServer;
