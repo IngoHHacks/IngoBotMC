@@ -170,13 +170,12 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public boolean onChatMessage(AsyncPlayerChatEvent event) {
+    public void onChatMessage(AsyncPlayerChatEvent event) {
         if (event.isAsynchronous()) {
             while (cThread.queueUsed()); // Wait
             chatQueue.add(new ChatMessage(event.getMessage(), event.getPlayer().getName()));
             discord.sendChat("<" + event.getPlayer().getName() + "> " + event.getMessage(), false);
         }
-        return true;
     }
 
     public void scheduleCommand(ScheduledCommand scheduledCommand) {
@@ -198,14 +197,13 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public boolean onJoin(PlayerJoinEvent event) {
+    public void onJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         createNPCFor(ingobotNPC, p);
-        return true;
     }
 
     @EventHandler
-    public boolean onBroadcastMessage(BroadcastMessageEvent event) {
+    public void onBroadcastMessage(BroadcastMessageEvent event) {
         // For Discord messages
         String msg = event.getMessage();
         if (msg.contains("#") && msg.contains("<") && msg.contains(">") && msg.contains("!")) {
@@ -214,7 +212,6 @@ public class Main extends JavaPlugin implements Listener {
             chatQueue.add(new ChatMessage("!" + event.getMessage().split("!")[1], sender));
             discord.sendChat(event.getMessage(), false);
         }
-        return true;
     }
 
     public void createNPCFor(EntityPlayer npc, Player target) {
