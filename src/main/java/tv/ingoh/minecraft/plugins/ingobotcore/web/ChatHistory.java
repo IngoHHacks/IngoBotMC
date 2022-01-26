@@ -21,7 +21,7 @@ public class ChatHistory {
                 if (entry.user.equals(user)) hist += entry.string.replace("\n", "\r\n");
             }
             if (hist.length() >= 1000) {
-                String str = hist.substring(hist.length() - 1000, 1000).replaceAll("[^\\x00-\\x7F]", "");
+                String str = hist.substring(hist.length() - 1000, hist.length()).replaceAll("[^\\x00-\\x7F]", "");
                 return str.endsWith("\n") ? str : (str.endsWith("\r") ? str + "\n" : str + "\r\n");
             }
         }

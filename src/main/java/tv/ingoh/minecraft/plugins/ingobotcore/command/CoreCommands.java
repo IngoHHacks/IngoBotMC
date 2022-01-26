@@ -214,7 +214,7 @@ public class CoreCommands {
                 default:
                     return new CommandResult(ResultType.NOTEXISTEXCEPTION, command);
 
-            }  
+            }
         } catch (Exception e /* Catch all command errors */) {
             return new CommandResult(ResultType.EXECUTIONERROREXCEPTION, command);
         }
