@@ -211,7 +211,7 @@ public class CoreCommands {
                         if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
                         else if (args.length > 1) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
                         wt.add(new Query(Type.IMAGE, sender, new String[]{args[0]}, isPublic));
-                        imageCooldownTime = System.currentTimeMillis() + 60000;
+                        imageCooldownTime = System.currentTimeMillis() + 60000 + (int)(Math.random() * 2);
                         return new CommandResult(ResultType.SUCCESS, command);
                     } else {
                         return new CommandResult(ResultType.COOLDOWNEXCEPTION, Integer.toString((int)(Math.ceil(System.currentTimeMillis() - 60000))));
