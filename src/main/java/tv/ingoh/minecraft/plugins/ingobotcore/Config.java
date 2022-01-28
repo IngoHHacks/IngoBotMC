@@ -13,6 +13,9 @@ public class Config {
     long cWatchlist;
     long cSpreadsheet;
     String spreadsheet;
+    String dbName;
+    String dbPwd;
+    String dbConnection;
 
     public Config(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -29,6 +32,9 @@ public class Config {
         plugin.getConfig().set("channel-watchlist", cWatchlist);
         plugin.getConfig().set("channel-spreadsheet", cSpreadsheet);
         plugin.getConfig().set("spreadsheet", spreadsheet);
+        plugin.getConfig().set("db-username", dbName);
+        plugin.getConfig().set("db-password", dbPwd);
+        plugin.getConfig().set("db-connection", dbConnection);
         plugin.saveConfig();
 	}
 
@@ -41,6 +47,9 @@ public class Config {
         cWatchlist = (long) plugin.getConfig().get("channel-watchlist");
         cSpreadsheet = (long) plugin.getConfig().get("channel-spreadsheet");
         spreadsheet = (String) plugin.getConfig().get("spreadsheet");
+        dbName = (String) plugin.getConfig().get("db-username");
+        dbPwd = (String) plugin.getConfig().get("db-password");
+        dbConnection = (String) plugin.getConfig().get("db-connection");
 	}
 
     public JavaPlugin getPlugin() {
@@ -74,7 +83,19 @@ public class Config {
     public long getcWatchlist() {
         return cWatchlist;
     }
-    
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public String getDbPwd() {
+        return dbPwd;
+    }
+
+    public String getDbConnection() {
+        return dbConnection;
+    }
+
     public String getSpreadsheet() {
         return spreadsheet;
     }
@@ -118,5 +139,20 @@ public class Config {
         this.spreadsheet = spreadsheet;
         save();
     }
-    
+
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+        save();
+    }
+
+    public void setDbPwd(String dbPwd) {
+        this.dbPwd = dbPwd;
+        save();
+    }
+
+    public void setDbConnection(String dbConnection) {
+        this.dbConnection = dbConnection;
+        save();
+    }
+
 }

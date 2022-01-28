@@ -51,5 +51,5 @@ public class CommandResult {
     public String toString() {
         return text;
     }
-    
+
 }

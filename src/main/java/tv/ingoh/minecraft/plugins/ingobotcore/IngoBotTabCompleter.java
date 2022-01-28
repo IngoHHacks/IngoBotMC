@@ -13,6 +13,7 @@ import tv.ingoh.util.calculator.Calculator;
 public class IngoBotTabCompleter implements TabCompleter {
 
     public final static String[] COMMANDS = {
+        "69",
         "bold",
         "c",
         "calc",

@@ -16,8 +16,11 @@ import javax.security.auth.login.LoginException;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mongodb.client.model.Updates;
 
 import org.apache.commons.lang.StringUtils;
+import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -31,8 +34,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
@@ -50,6 +55,7 @@ import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
+import tv.ingoh.util.Mongo;
 
 public class Main extends JavaPlugin implements Listener {
 
@@ -68,6 +74,9 @@ public class Main extends JavaPlugin implements Listener {
     ArrayList<Countdown> countdowns;
     LinkedList<OfflinePlayer> whitelistQueue;
 
+    Mongo mongo;
+    BukkitTask mongoTask;
+
     @Override
     public void onEnable() {
         chatQueue = new LinkedList<>();
@@ -75,6 +84,8 @@ public class Main extends JavaPlugin implements Listener {
         config = new Config(this);
         config.load();
         discord = new DiscordInterface(config, this);
+        mongo = new Mongo(config, discord);
+        mongoTask = Bukkit.getScheduler().runTaskAsynchronously(this, mongo);
         try {
             discord.start();
         } catch (LoginException e) {
@@ -134,15 +145,20 @@ public class Main extends JavaPlugin implements Listener {
             e.printStackTrace();
         }
         ingobotNPC = new EntityPlayer(nmsServer, nmsWorld, gameProfile);
-        // TODO: Check
         ingobotNPC.b(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
     }
 
     @Override
     public void onDisable() {
+        int ms = mongo.getQueue().size();
+        if (ms > 0) {
+            discord.sendDebug("WARNING: Mongo queue not empty! " + ms + " elements still remaining!");
+        }
         Bukkit.getServer().getScheduler().cancelTasks(this);
         wThread.end();
         cThread.end();
+        mongo.end();
+        mongoTask.cancel();
     }
 
 
@@ -200,6 +216,18 @@ public class Main extends JavaPlugin implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         createNPCFor(ingobotNPC, p);
+        Document q = new Document().append("_UUID", event.getPlayer().getUniqueId().toString());
+        Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
+                                 Updates.currentTimestamp("_last_online"));
+        mongo.update("players", q, u, isEnabled());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        Document q = new Document().append("_UUID", event.getPlayer().getUniqueId().toString());
+        Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
+                                 Updates.currentTimestamp("_last_online"));
+        mongo.update("players", q, u, isEnabled());
     }
 
     @EventHandler
@@ -291,5 +319,9 @@ public class Main extends JavaPlugin implements Listener {
             }
         }
 
+    }
+
+    public Mongo getMongo() {
+        return mongo;
     }
 }

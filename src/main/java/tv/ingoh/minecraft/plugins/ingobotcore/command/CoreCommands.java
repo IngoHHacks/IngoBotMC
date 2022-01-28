@@ -1,11 +1,19 @@
 package tv.ingoh.minecraft.plugins.ingobotcore.command;
 
 import java.security.SecureRandom;
+import java.util.function.Function;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.UpdateResult;
+
+import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
@@ -20,6 +28,7 @@ import tv.ingoh.util.calculator.Calculator;
 public class CoreCommands {
 
     static long imageCooldownTime = 0;
+    static int count69 = -1;
 
     public static CommandResult executeCommand(ScheduledCommand cmd) {
         return executeCommand(cmd.main, cmd.getString(), cmd.getArgs(), cmd.getSender(), cmd.getwThread(), cmd.isPublic(), cmd.getDiscord());
@@ -91,7 +100,7 @@ public class CoreCommands {
                     try {
                         time = Double.parseDouble(args[0]);
                     } catch (NumberFormatException ex) {
-                        return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Cannot convert " + args[0] + " to a number.");
+                        return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Cannot convert " + args[0] + " to a number, idiot.");
                     }
                     if (!isPublic) {
                         if (senderP != null) {
@@ -99,15 +108,15 @@ public class CoreCommands {
                                 return new CommandResult(ResultType.VALUEOUTOFRANGEEXCEPTION, Double.toString(time), "duration", "<=300");
                             }
                             boolean r = main.scheduleCountdown(senderP, time);
-                            if (!r) return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Too many countdowns.");
-                            IngoBot.sendMessageTo(ChatColor.GREEN + "Starting countdown for " + time + " seconds.", discord, isPublic, sender);
+                            if (!r) return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Too many countdowns, idiot.");
+                            IngoBot.sendMessageTo(ChatColor.GREEN + "Starting countdown for " + time + " seconds, idiot.", discord, isPublic, sender);
                         }
                     } else {
                         if (time > 60) {
                             return new CommandResult(ResultType.VALUEOUTOFRANGEEXCEPTION, Double.toString(time), "duration", "<=60");
                         }
                         boolean r = main.scheduleCountdown(null, time);
-                        if (!r) return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Too many countdowns.");
+                        if (!r) return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Too many countdowns, idiot.");
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "USERINFO":
@@ -120,6 +129,7 @@ public class CoreCommands {
                 case "PING":
                     if (args.length > 0) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "0");
                     if (senderP != null) IngoBot.sendMessageTo("Ping: " + senderP.getPing(), discord, isPublic, sender);
+                    else IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "HOW":
                     IngoBot.sendMessageTo("§LHOW", discord, isPublic, sender);
@@ -142,6 +152,7 @@ public class CoreCommands {
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "RQ":
                     if (senderP != null) senderP.kickPlayer("Ragequit?");
+                    else IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "CUM":
                     if (senderP != null) senderP.playSound(senderP.getLocation(), Sound.BLOCK_HONEY_BLOCK_BREAK, 100, 0.0f);
@@ -205,11 +216,57 @@ public class CoreCommands {
                     } else {
                         return new CommandResult(ResultType.COOLDOWNEXCEPTION, Integer.toString((int)(Math.ceil(System.currentTimeMillis() - 60000))));
                     }
-                case "69":
-                case "WIKISEARCH":
                 case "HELP":
+                    printCommandList(sender, isPublic, discord);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "69":
+                    if (senderP != null) {
+                        Bson q = Filters.eq("_69", true);
+                        Function<FindIterable<Document>, String> f = new Function<FindIterable<Document>,String>() {
+                            @Override
+                            public String apply(FindIterable<Document> t) {
+                                if (count69 == -1) {
+                                    count69 = 0;
+                                    MongoCursor<Document> it = t.iterator();
+                                    while (it.hasNext()) {
+                                        it.next();
+                                        count69++;
+                                    }
+                                }
+                                FindIterable<Document> current = t.filter(Filters.and(Filters.eq("_UUID", senderP.getUniqueId().toString()), Filters.eq("_69", true)));
+                                Function<UpdateResult, String> f2 = new Function<UpdateResult,String>() {
+                                    @Override
+                                    public String apply(UpdateResult t) {
+                                        if (t.wasAcknowledged()) {
+                                            count69++;
+                                            IngoBot.sendMessageTo(ChatColor.BLUE + "You did a 69! " + count69 + " players have done a 69!", discord, isPublic, sender);
+                                        } else {
+                                            IngoBot.sendMessageTo("Something went wrong trying to do a 69...", discord, isPublic, sender);
+                                        }
+                                        return "";
+                                    };
+                                };
+                                if (current.first() == null) {
+                                    Bson q2 = Filters.eq("_UUID", senderP.getUniqueId().toString());
+                                    Bson u = Updates.set("_69", true);
+                                    main.getMongo().update("players", q2, u, isPublic, f2);
+                                } else {
+                                    IngoBot.sendMessageTo("You have already used the 69 command, idiot.", discord, isPublic, sender);
+                                }
+                                return "";
+                            }
+                        };
+                        main.getMongo().find("players", q, f);
+                    } else {
+                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "PROPERTY":
+                case "WIKISEARCH":
+                case "CMDBAN":
+                case "CMDTIMEOUT":
                 // TODO
-                    IngoBot.sendMessageTo("Command to be added.", discord, isPublic, sender);
+                    IngoBot.sendMessageTo("Command to be added, idiot.", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 default:
                     return new CommandResult(ResultType.NOTEXISTEXCEPTION, command);

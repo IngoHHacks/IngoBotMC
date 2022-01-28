@@ -309,6 +309,7 @@ public class AsyncWebThread implements Runnable {
                                     }
                                     discord.sendDebug(msg + out);
                                     r.close();
+                                    return out;
                                 } else {
                                     discord.sendDebug("**Filtered: " + s + "**");
                                     r.close();
@@ -357,6 +358,7 @@ public class AsyncWebThread implements Runnable {
                                         }
                                         discord.sendDebug(("..." + out).replace("...>>", "..."));
                                         r.close();
+                                        return out;
                                     } else {
                                         discord.sendDebug("**Filtered: " + s + "**");
                                         r.close();

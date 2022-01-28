@@ -6,3 +6,6 @@ channel-playerlist: 820794854208045106
 channel-watchlist: 823325191618560021
 channel-spreadsheet: 820788577045708821
 spreadsheet: LINK
+db-username: USERNAME
+db-password: PASSWORD
+db-connection: localhost:27017
