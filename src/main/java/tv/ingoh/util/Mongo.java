@@ -15,7 +15,6 @@ import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import net.minecraft.util.Tuple;
 import tv.ingoh.minecraft.plugins.ingobotcore.Config;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 
