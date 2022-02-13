@@ -234,11 +234,14 @@ public class Main extends JavaPlugin implements Listener {
     public void onBroadcastMessage(BroadcastMessageEvent event) {
         // For Discord messages
         String msg = event.getMessage();
-        if (msg.contains("#") && msg.contains("<") && msg.contains(">") && msg.contains("!")) {
-            String sender = StringUtils.substringBetween(msg, "<", ">");
-            while (cThread.queueUsed()); // Wait
-            chatQueue.add(new ChatMessage("!" + event.getMessage().split("!")[1], sender));
-            discord.sendChat(event.getMessage(), false);
+        if (msg.contains("#") && msg.contains("<") && msg.contains("> ") && msg.contains("!")) {
+            String cmd = StringUtils.substringAfter(msg, "> ");
+            if (cmd.charAt(0) == '!' && cmd.length() > 1) {
+                String sender = StringUtils.substringBetween(msg, "<", ">");
+                while (cThread.queueUsed()); // Wait
+                chatQueue.add(new ChatMessage(cmd, sender));
+                discord.sendChat(event.getMessage(), false);
+            }
         }
     }
 

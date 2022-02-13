@@ -767,6 +767,11 @@ public class Filter {
                 "kill your self",
                 "kill myself",
                 "kill my self",
+                "killing me",
+                "killing yourself",
+                "killing your self",
+                "killing myself",
+                "killing my self",
                 "kms",
                 "kys",
                 "suicide"
