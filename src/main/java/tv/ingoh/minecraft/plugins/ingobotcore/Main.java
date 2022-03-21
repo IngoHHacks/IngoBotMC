@@ -220,7 +220,7 @@ public class Main extends JavaPlugin implements Listener {
         Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
                                  Updates.currentTimestamp("_last_online"));
         mongo.update("players", q, u, isEnabled());
-        PlayerListHandler.updatePlayerList(config, discord);
+        PlayerListHandler.updatePlayerList(config, discord, new LinkedList<>());
     }
 
     @EventHandler
@@ -229,7 +229,9 @@ public class Main extends JavaPlugin implements Listener {
         Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
                                  Updates.currentTimestamp("_last_online"));
         mongo.update("players", q, u, isEnabled());
-        PlayerListHandler.updatePlayerList(config, discord);
+        LinkedList<String> exclude = new LinkedList<>();
+        exclude.add(event.getPlayer().getName());
+        PlayerListHandler.updatePlayerList(config, discord, exclude);
     }
 
     @EventHandler
