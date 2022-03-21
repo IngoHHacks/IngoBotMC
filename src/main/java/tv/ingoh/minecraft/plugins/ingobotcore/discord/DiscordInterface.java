@@ -8,6 +8,8 @@ import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import tv.ingoh.minecraft.plugins.ingobotcore.Config;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
 
@@ -71,5 +73,26 @@ public class DiscordInterface {
 
     public void sendTo(long channelId, String string) {
         discord.getTextChannelById(channelId).sendMessage(string).queue();
+    }
+
+    public void sendTo(long channelId, Message message) {
+        discord.getTextChannelById(channelId).sendMessage(message).queue();
+    }
+
+    public void sendTo(long channelId, MessageEmbed message) {
+        discord.getTextChannelById(channelId).sendMessageEmbeds(message).queue();
+    }
+
+
+    public void editMessage(long channelId, long messageId, String string) {
+        discord.getTextChannelById(channelId).editMessageById(messageId, string).queue();
+    }
+
+    public void editMessage(long channelId, long messageId, Message message) {
+        discord.getTextChannelById(channelId).editMessageById(messageId, message).queue();
+    }
+
+    public void editMessage(long channelId, long messageId, MessageEmbed message) {
+        discord.getTextChannelById(channelId).editMessageEmbedsById(messageId, message).queue();
     }
 }

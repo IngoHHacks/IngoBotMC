@@ -8,6 +8,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
+import tv.ingoh.util.DateUtils;
 import tv.ingoh.util.calculator.Calculator;
 
 public class IngoBotTabCompleter implements TabCompleter {
@@ -22,6 +23,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         "eyes",
         "f",
         "fs",
+        "furry",
         "how",
         "image",
         "italic",
@@ -70,7 +72,11 @@ public class IngoBotTabCompleter implements TabCompleter {
     private List<String> finishCommand(String string) {
         LinkedList<String> possible = new LinkedList<>();
         for (String cmd : COMMANDS) {
-            if (cmd.startsWith(string)) possible.add(cmd);
+            if (cmd.startsWith(string)) {
+                if (!cmd.equals("FURRY") || DateUtils.isAfterAprilFools2022()) {
+                    possible.add(cmd);
+                }
+            }
         }
         return possible;
     }
@@ -107,5 +113,5 @@ public class IngoBotTabCompleter implements TabCompleter {
 
         return possible;
     }
-    
+
 }

@@ -23,6 +23,7 @@ import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
+import tv.ingoh.util.DateUtils;
 import tv.ingoh.util.calculator.Calculator;
 
 public class CoreCommands {
@@ -84,6 +85,19 @@ public class CoreCommands {
                     }
                     wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gpt2"}, isPublic));
                     return new CommandResult(ResultType.SUCCESS, command);
+                case "FURRY":
+                    if (DateUtils.isAfterAprilFools2022()) {
+                        if (!isPublic) {
+                            if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot: " + ChatColor.RESET + " [F] " + argsS + "...");
+                            discord.sendDebug("{" + sender + "} [F] " + argsS + "...");
+                        } else {
+                            discord.sendDebug("[" + sender + "] [F] " + argsS + "...");
+                        }
+                        wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gpt2furry"}, isPublic));
+                        return new CommandResult(ResultType.SUCCESS, command);
+                    } else {
+                        return new CommandResult(ResultType.NOTEXISTEXCEPTION, command);
+                    }
                 case "S":
                     if (!isPublic) {
                         if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot:" + ChatColor.RESET + " [S] " + argsS + "...");

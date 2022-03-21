@@ -5,7 +5,7 @@
 
   <groupId>tv.ingoh</groupId>
   <artifactId>IngoBotCore</artifactId>
-  <version>0.7.0</version>
+  <version>0.8.0</version>
 
   <name>ingoh-ingobotcore-plugin</name>
   <url>ingoh.tv</url>
@@ -40,26 +40,26 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.18.1-R0.1-SNAPSHOT</version>
+      <version>1.18.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.18.1</version>
+      <version>1.18.2</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../spigot/spigot-1.18.1-R0.1-SNAPSHOT.jar</systemPath>
+      <systemPath>${project.basedir}/../spigot/spigot-1.18.2-R0.1-SNAPSHOT.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.mojang</groupId>
       <artifactId>authlib</artifactId>
-      <version>3.2.38</version>
+      <version>3.3.39</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../spigot/authlib-3.2.38.jar</systemPath>
+      <systemPath>${project.basedir}/../spigot/authlib-3.3.39.jar</systemPath>
     </dependency>
     <dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
+	  <groupId>org.junit.jupiter</groupId>
+	  <artifactId>junit-jupiter</artifactId>
       <version>5.7.1</version>
       <scope>provided</scope>
     </dependency>
@@ -91,6 +91,14 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>16</source>
+          <target>16</target>
         </configuration>
       </plugin>
     </plugins>

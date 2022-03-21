@@ -12,6 +12,7 @@ public class Config {
     long cPlayerlist;
     long cWatchlist;
     long cSpreadsheet;
+    long mPlayerlist;
     String spreadsheet;
     String dbName;
     String dbPwd;
@@ -31,6 +32,7 @@ public class Config {
         plugin.getConfig().set("channel-playerlist", cPlayerlist);
         plugin.getConfig().set("channel-watchlist", cWatchlist);
         plugin.getConfig().set("channel-spreadsheet", cSpreadsheet);
+        plugin.getConfig().set("message-playerlist", mPlayerlist);
         plugin.getConfig().set("spreadsheet", spreadsheet);
         plugin.getConfig().set("db-username", dbName);
         plugin.getConfig().set("db-password", dbPwd);
@@ -46,6 +48,7 @@ public class Config {
         cPlayerlist = (long) plugin.getConfig().get("channel-playerlist");
         cWatchlist = (long) plugin.getConfig().get("channel-watchlist");
         cSpreadsheet = (long) plugin.getConfig().get("channel-spreadsheet");
+        mPlayerlist = (long) plugin.getConfig().get("message-playerlist");
         spreadsheet = (String) plugin.getConfig().get("spreadsheet");
         dbName = (String) plugin.getConfig().get("db-username");
         dbPwd = (String) plugin.getConfig().get("db-password");
@@ -82,6 +85,10 @@ public class Config {
 
     public long getcWatchlist() {
         return cWatchlist;
+    }
+
+    public long getmPlayerlist() {
+        return mPlayerlist;
     }
 
     public String getDbName() {

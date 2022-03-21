@@ -78,7 +78,7 @@ public class AsyncWebThread implements Runnable {
                             boolean finish = Boolean.parseBoolean(args[1]);
                             String model = args[2];
                             if (model.equals("gpt2")) u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
-                            else if (model.equals("gptneo")) u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
+                            else if (model.equals("gptneo") || model.equals("gpt2furry")) u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
                             else u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", "gpt2"));
                             String res;
                             if (model.equals("gpt2")) {
@@ -173,7 +173,7 @@ public class AsyncWebThread implements Runnable {
 
     final static String[] STARTERS = {"I", "I", "I", "I'm", "I'm", "I'm", "I am", "I am", "I'll", "I will", "I am going to", "I'm going to", "I think", "I wish", "I saw", "I love", "I like", "I hate", "I know", "I didn't know", "I wonder", "What if", "Imagine if", "Did you know that", "How", "My", "My favorite", "Did I", "Can I", "Can you", "Should I", "May I", "You"};
     final static String[] BEFORE_PERSON = {"I wonder if", "What if", "Imagine if", "Did you know that", "How did", "I didn't know that"};
-    final static String[] AFTER_PERSON = {"", "", "is", "is", "is", "will", "is going to", "loves", "likes", "hates", "knows"};
+    final static String[] AFTER_PERSON = {"", "", "is", "is", "is", "will", "is going to", "loves", "likes", "knows"};
 
     private String randomStartMessage() {
         if (Math.random() > 0.5) {
@@ -187,7 +187,7 @@ public class AsyncWebThread implements Runnable {
         }
     }
 
-    final static String[] NAMES = {"Ingo", "Vic", "Stars", "Simple", "tangy", "misplet", "matthew", "Omega", "plex", "arc", "Spooked", "snake", "Veritas", "Timmy_ir", "captainNeda", "Pyro", "Racoonix", "s0und_", "nathan", "B_jamin", "NkdSquid", "frigateorpheon", "bl1ngbl0ng", "HAX0R", "Cha0s", "glitch", "Samuel", "FoxyProxy", "Tub", "DoubleL", "KitLemonfoot"};
+    public final static String[] NAMES = {"Ingo", "Vic", "Stars", "Simple", "tangy", "misplet", "matthew", "Omega", "plex", "arc", "Spooked", "snake", "Veritas", "Timmy_ir", "captainNeda", "Pyro", "Racoonix", "s0und_", "nathan", "B_jamin", "NkdSquid", "frigateorpheon", "bl1ngbl0ng", "HAX0R", "Cha0s", "glitch", "Samuel", "FoxyProxy", "Tub", "DoubleL", "KitLemonfoot", "Zyn"};
 
     private String randomPerson() {
         if (Math.random() > 0.5) {

@@ -8,7 +8,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -26,9 +25,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_18_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_18_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_18_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -56,6 +55,7 @@ import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
 import tv.ingoh.util.Mongo;
+import tv.ingoh.util.PlayerListHandler;
 
 public class Main extends JavaPlugin implements Listener {
 
@@ -220,6 +220,7 @@ public class Main extends JavaPlugin implements Listener {
         Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
                                  Updates.currentTimestamp("_last_online"));
         mongo.update("players", q, u, isEnabled());
+        PlayerListHandler.updatePlayerList(config, discord);
     }
 
     @EventHandler
@@ -228,6 +229,7 @@ public class Main extends JavaPlugin implements Listener {
         Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
                                  Updates.currentTimestamp("_last_online"));
         mongo.update("players", q, u, isEnabled());
+        PlayerListHandler.updatePlayerList(config, discord);
     }
 
     @EventHandler
@@ -280,13 +282,6 @@ public class Main extends JavaPlugin implements Listener {
 
         return true;
 
-    }
-    public static List<String> getPlayerList() {
-        LinkedList<String> pList = new LinkedList<>();
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            pList.add(p.getName());
-        }
-        return pList;
     }
 
     public void whitelist(String ign) {

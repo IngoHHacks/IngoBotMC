@@ -70,9 +70,10 @@ public class IngoBot {
             i++;
         }
     }
-    final static String[] NAMES = {"IngoBot", "OtherBot", "RandomBot", "IdiotBot", "BestBot", "MineBot", "ArbitraryBot", "IngoBot 2", "NotIngoBot", "IngoHBot", "StarsBot", "VicBot"};
+    public final static String[] USERNAMES = {"IngoHBot", "VicBot", "StarsBot", "SimpleBot", "tangyBot", "mispletBot", "matthewBot", "OmegaBot", "plexBot", "ArcBot", "SpookedBot", "snakeBot", "VeritasBot", "TimmyBot", "captainNedaBot", "PyroBot", "RacoonixBot", "s0undBot", "nathanBot", "B_jaminBot", "NkdSquidBot", "frigateBot", "bl1ngbl0ngBot", "HAX0RBot", "Cha0sBot", "glitchBot", "SamuelBot", "FoxyProxyBot", "TubBot", "DoubleLBot", "KitLemonBot", "ZynBot"};
+
     private static String randomBotName() {
-        return NAMES[(int)(Math.random() * NAMES.length)];
+        return USERNAMES[(int)(Math.random() * USERNAMES.length)];
     }
 
     public static void sendMessageFromAsync(Main main, String message) {
