@@ -73,7 +73,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         LinkedList<String> possible = new LinkedList<>();
         for (String cmd : COMMANDS) {
             if (cmd.startsWith(string)) {
-                if (!cmd.equals("FURRY") || DateUtils.isAfterAprilFools2022()) {
+                if (!cmd.toLowerCase().equals("furry") || DateUtils.isAfterAprilFools2022()) {
                     possible.add(cmd);
                 }
             }
