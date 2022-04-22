@@ -38,7 +38,7 @@ public class AsyncWebThread implements Runnable {
         USERINFO;
     }
 
-    final static String CHAT = "https://ingoh.tv/api.php?prompt&path=%1&text=%0";
+    final static String CHAT = "https://ingoh.net/capi/%1/%0";
 
     LinkedList<Query> queue = new LinkedList<>();
     DiscordInterface discord;

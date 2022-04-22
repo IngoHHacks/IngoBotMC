@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -70,9 +69,10 @@ public class MainLoop implements Runnable {
 
             if (commandQueue.size() > 0) {
                 CommandResult result;
-                result = CoreCommands.executeCommand(commandQueue.getFirst());
+                ScheduledCommand cmd = commandQueue.getFirst();
+                result = CoreCommands.executeCommand(cmd);
                 if (!result.isSuccessful()) {
-                    IngoBot.sendMessageRaw(result.toString(), discord);
+                    IngoBot.sendMessageToRaw(result.toString(), discord, cmd.isPublic(), cmd.getSender());
                     if (result.isUnhandledException()) {
                         result.printStackTrace(discord);
                     }
