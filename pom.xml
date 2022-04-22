@@ -5,10 +5,10 @@
 
   <groupId>tv.ingoh</groupId>
   <artifactId>IngoBotCore</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 
   <name>ingoh-ingobotcore-plugin</name>
-  <url>ingoh.tv</url>
+  <url>ingoh.net</url>
 
   <packaging>jar</packaging>
   <properties>

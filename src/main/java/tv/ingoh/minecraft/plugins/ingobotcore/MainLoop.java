@@ -5,7 +5,11 @@ import java.util.LinkedList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Particle;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
@@ -21,12 +25,15 @@ public class MainLoop implements Runnable {
     private volatile LinkedList<ExternalMessageEvent> minecordBC;
     private volatile ArrayList<Countdown> countdowns;
     private volatile LinkedList<OfflinePlayer> whitelistQueue;
-
-
+    private volatile LinkedList<Mob> sacrifices;
+    private volatile LinkedList<Integer> sacrificeAges;
+    private Main mainI;
+    
     boolean queueUsed;
     DiscordInterface discord;
 
-    public MainLoop(LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, LinkedList<ExternalMessageEvent> minecordBC, ArrayList<Countdown> countdowns, LinkedList<OfflinePlayer> whitelistQueue, DiscordInterface discord) {
+    public MainLoop(Main mainI, LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, LinkedList<ExternalMessageEvent> minecordBC, ArrayList<Countdown> countdowns, LinkedList<OfflinePlayer> whitelistQueue, DiscordInterface discord, LinkedList<Mob> sacrifices, LinkedList<Integer> sacrificeAges) {
+        this.mainI = mainI;
         this.outputQueue = outputQueue;
         this.commandQueue = commandQueue;
         this.syncCommands = syncCommands;
@@ -35,6 +42,8 @@ public class MainLoop implements Runnable {
         this.whitelistQueue = whitelistQueue;
         queueUsed = false;
         this.discord = discord;
+        this.sacrifices = sacrifices;
+        this.sacrificeAges = sacrificeAges;
     }
 
     /**
@@ -115,6 +124,23 @@ public class MainLoop implements Runnable {
                 whitelistQueue.removeFirst();
             }
 
+            if (sacrifices.size() > 0) {
+                for (int i = sacrifices.size() - 1; i >= 0; i--) {
+                    Mob entity = sacrifices.get(i);
+                    Vector loc = entity.getLocation().toVector();
+                    Vector target = new Vector(160.5, 56, 208.5);
+                    Vector translation = target.clone().subtract(loc);
+                    entity.setVelocity(translation.clone().normalize().multiply(0.1));
+                    entity.getWorld().spawnParticle(Particle.SOUL, entity.getLocation(), 3, 0.25, 0.25, 0.25, 0.05);
+                    sacrificeAges.set(i, sacrificeAges.get(i) + 1);
+                    if (translation.lengthSquared() < 0.25 || sacrificeAges.get(i) > 100) {
+                        sacrifices.remove(i);
+                        sacrificeAges.remove(i);
+                        entity.damage(1000000000, mainI.ingobotNPC.getBukkitEntity());
+                    }
+                }
+            }
+
         } catch (Exception e) {
             // Failsafe to prevent infinite loops
             discord.sendDebug("ERROR IN MAIN LOOP: " + e.getMessage());
@@ -124,6 +150,7 @@ public class MainLoop implements Runnable {
             if (syncCommands.size() > 0) syncCommands.removeFirst();
             if (minecordBC.size() > 0) minecordBC.removeFirst();
             if (countdowns.size() > 0) countdowns.remove(0);
+            if (sacrifices.size() > 0) sacrifices.removeFirst();
         }
         queueUsed = false;
     }

@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,9 +30,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
 import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -39,6 +46,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
+import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
+import net.minecraft.network.protocol.game.PacketPlayOutEntityHeadRotation;
 import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
 import net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo;
 import net.minecraft.server.MinecraftServer;
@@ -51,9 +60,9 @@ import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CoreCommands;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ScheduledCommand;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
+import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
-import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
 import tv.ingoh.util.Mongo;
 import tv.ingoh.util.PlayerListHandler;
 
@@ -68,11 +77,13 @@ public class Main extends JavaPlugin implements Listener {
     LinkedList<Message> outputQueue;
     LinkedList<ScheduledCommand> commandQueue;
     MainLoop mainLoop;
-    EntityPlayer ingobotNPC;
+    public EntityPlayer ingobotNPC;
     LinkedList<String> syncCommands;
     LinkedList<ExternalMessageEvent> minecordBC;
     ArrayList<Countdown> countdowns;
     LinkedList<OfflinePlayer> whitelistQueue;
+    LinkedList<Mob> sacrifices;
+    LinkedList<Integer> sacrificeAges;
 
     Mongo mongo;
     BukkitTask mongoTask;
@@ -114,8 +125,10 @@ public class Main extends JavaPlugin implements Listener {
         minecordBC = new LinkedList<>();
         countdowns = new ArrayList<>();
         whitelistQueue = new LinkedList<>();
+        sacrifices = new LinkedList<>();
+        sacrificeAges = new LinkedList<>();
 
-        mainLoop = new MainLoop(outputQueue, commandQueue, syncCommands, minecordBC, countdowns, whitelistQueue, discord);
+        mainLoop = new MainLoop(this, outputQueue, commandQueue, syncCommands, minecordBC, countdowns, whitelistQueue, discord, sacrifices, sacrificeAges);
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, mainLoop, 0, 1);
 
         // Entity
@@ -213,13 +226,71 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Mob)) return;
+        if (event.getDamage() >= 999999999) return;
+        Mob entity = ((Mob)event.getEntity());
+        if(entity.getHealth() - event.getFinalDamage() <= 0.0d) {
+            double x = event.getEntity().getLocation().getX();
+            double y = event.getEntity().getLocation().getY();
+            double z = event.getEntity().getLocation().getZ();
+            if (x > 155.5 && x < 165.5 &&  y > 50 && y < 60 && z > 203.5 && z < 213.5) {
+                try {
+                    Method getHandle = entity.getClass().getMethod("getHandle");
+                    Object eo = getHandle.invoke(entity);
+                    Field field = eo.getClass().getField("Q" /*noPhysics*/);
+                    field.setAccessible(true);
+                    field.setBoolean(eo, true);
+                    sacrifices.add(entity);
+                    sacrificeAges.add(0);
+                    entity.setGravity(false);
+                    entity.setAware(false);
+                    addSacrifice();
+                    if(event instanceof EntityDamageByEntityEvent) {
+                        Entity attacker = ((EntityDamageByEntityEvent)event).getDamager();
+                        if (attacker instanceof Player) {
+                            addSacrificeFor((Player)attacker);
+                        }
+                    }
+                    event.setCancelled(true);
+                } catch (Exception ignore) {}
+            }
+        }
+    }
+
+    private void addSacrifice() {
+        Document q = new Document().append("_id", "sacrifices");
+        Bson u = Updates.combine(Updates.inc("count", 1));
+        mongo.update("meta", q, u, true);
+    }
+
+    private void addSacrificeFor(Player player) {
+        Document q = new Document().append("_UUID", player.getUniqueId().toString());
+        Bson u = Updates.combine(Updates.inc("_sacrifices", 1));
+        mongo.update("players", q, u, true);
+    }
+
+    @EventHandler
+    public void onDeath(EntityDeathEvent event) {
+        if (event.getEntity().getKiller() != null && event.getEntity().getKiller().equals(ingobotNPC.getBukkitEntity())) {
+            event.getDrops().clear();
+            event.setDroppedExp(0);
+            for (Entity en : ingobotNPC.getBukkitEntity().getNearbyEntities(10, 10, 10)) {
+                if (en instanceof Player) {
+                    playAttackAnimationFor(ingobotNPC, (Player) en);
+                }
+            }
+        }
+    }
+
+    @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         createNPCFor(ingobotNPC, p);
         Document q = new Document().append("_UUID", event.getPlayer().getUniqueId().toString());
         Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
                                  Updates.currentTimestamp("_last_online"));
-        mongo.update("players", q, u, isEnabled());
+        mongo.update("players", q, u, true);
         PlayerListHandler.updatePlayerList(config, discord, new LinkedList<>());
     }
 
@@ -228,7 +299,7 @@ public class Main extends JavaPlugin implements Listener {
         Document q = new Document().append("_UUID", event.getPlayer().getUniqueId().toString());
         Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
                                  Updates.currentTimestamp("_last_online"));
-        mongo.update("players", q, u, isEnabled());
+        mongo.update("players", q, u, true);
         LinkedList<String> exclude = new LinkedList<>();
         exclude.add(event.getPlayer().getName());
         PlayerListHandler.updatePlayerList(config, discord, exclude);
@@ -253,6 +324,12 @@ public class Main extends JavaPlugin implements Listener {
         PlayerConnection connection = ((CraftPlayer)target).getHandle().b; /* playerconnection */
         connection.a(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a /* add */, npc));
         connection.a(new PacketPlayOutNamedEntitySpawn(npc));
+        connection.a(new PacketPlayOutEntityHeadRotation(npc, (byte)(64)));
+    }
+
+    public void playAttackAnimationFor(EntityPlayer npc, Player target) {
+        PlayerConnection connection = ((CraftPlayer)target).getHandle().b; /* playerconnection */
+        connection.a(new PacketPlayOutAnimation(npc, 0));
     }
 
     public void sendCommand(String contentRaw) {
