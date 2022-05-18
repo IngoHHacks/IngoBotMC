@@ -193,7 +193,7 @@ public class AsyncWebThread implements Runnable {
                         String title = j2.get("title").getAsString();
                         String extract = j2.get("extract").getAsString();
                         IngoBot.sendMessageTo(ChatColor.GOLD + title, discord, isPublic, q.user);
-                        IngoBot.sendMessageTo(ChatColor.GOLD + Escape.escapeAll(extract), discord, isPublic, q.user);
+                        IngoBot.sendMessageTo(ChatColor.GOLD + extract, discord, isPublic, q.user);
                         String link = "https://ingoh.net/simpmc/wiki/index.php/" + URLEncoder.encode(title.replace(" ", "_"), "utf-8").replace("%3A", ":");
                         ComponentBuilder builder = new ComponentBuilder("[LINK TO " + title + "]")
                         .event(new ClickEvent(ClickEvent.Action.OPEN_URL, link))
