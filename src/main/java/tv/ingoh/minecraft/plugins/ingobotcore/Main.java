@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -56,6 +57,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.server.network.PlayerConnection;
+import net.minecraft.server.players.PlayerList;
 import tv.ingoh.minecraft.plugins.ingobotcore.chat.ChatThread;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ChatMessage;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
@@ -170,14 +172,27 @@ public class Main extends JavaPlugin implements Listener {
 
         NetworkManager conn = NetworkManager.a(InetSocketAddress.createUnresolved(Bukkit.getIp(), Bukkit.getPort()), true);
 
-        nmsWorld.a(ingobotNPC);
+        nmsWorld.a(ingobotNPC); // Add to overworld
         
-        nmsServer.ac().a(conn, ingobotNPC);
-        nmsServer.ac().t().add(ingobotNPC);
+        nmsServer.ac().a(conn, ingobotNPC); // Summon to create connection
+        nmsServer.ac().t().add(ingobotNPC); // Add to player list
 
         ingobotNPC.b(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
 
         RandomThings.initialize();
+
+        Field f;
+        try {
+            // CRINGE PATCH STUFF
+            f = PlayerList.class.getDeclaredField("playersByName");
+            f.setAccessible(true);
+            Map<String,EntityPlayer> map = (Map<String,EntityPlayer>) f.get(nmsServer.ac());
+            map.put("ingobot", ingobotNPC);
+        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            Bukkit.getLogger().warning("playersByName field not found");
+        }
+        
     }
 
     @Override
