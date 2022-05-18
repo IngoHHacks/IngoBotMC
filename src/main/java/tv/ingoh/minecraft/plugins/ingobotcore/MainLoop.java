@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
+import net.minecraft.commands.CommandListenerWrapper;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CoreCommands;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ScheduledCommand;
@@ -54,14 +55,20 @@ public class MainLoop implements Runnable {
             queueUsed = true;
             if (outputQueue.size() > 0) {
                 if (System.currentTimeMillis() > outputQueue.getFirst().delay) {
-                    if (outputQueue.getFirst().receiver != null) {
-                        Player p = Bukkit.getPlayer(outputQueue.getFirst().receiver);
-                        if (p != null) p.sendMessage(outputQueue.getFirst().message);
-                        else Bukkit.getLogger().info(outputQueue.getFirst().message);
-                        discord.sendChat("IngoBot -> " + outputQueue.getFirst().receiver + ": " + outputQueue.getFirst().message, false);
+                    if (outputQueue.getFirst() instanceof FormattedMessage) {
+                        for (Player player : Bukkit.getOnlinePlayers()) {
+                            player.sendRawMessage(outputQueue.getFirst().message);
+                        }
                     } else {
-                        Bukkit.broadcastMessage(outputQueue.getFirst().message);
-                        discord.sendChat(outputQueue.getFirst().message);
+                        if (outputQueue.getFirst().receiver != null) {
+                            Player p = Bukkit.getPlayer(outputQueue.getFirst().receiver);
+                            if (p != null) p.sendMessage(outputQueue.getFirst().message);
+                            else Bukkit.getLogger().info(outputQueue.getFirst().message);
+                            discord.sendChat("IngoBot -> " + outputQueue.getFirst().receiver + ": " + outputQueue.getFirst().message, false);
+                        } else {
+                            Bukkit.broadcastMessage(outputQueue.getFirst().message);
+                            discord.sendChat(outputQueue.getFirst().message);
+                        }
                     }
                     outputQueue.removeFirst();
                 }
@@ -82,13 +89,9 @@ public class MainLoop implements Runnable {
 
             if (syncCommands.size() > 0) {
                 String contentRaw = syncCommands.getFirst();
-                if (contentRaw.charAt(0) == '/') {
-                    boolean result = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), contentRaw.substring(1));
-                    if (result /*exists*/) {
-                        discord.sendInfoChat("Command executed.");
-                    } else {
-                        discord.sendInfoChat("Command not executed.");
-                    }
+                if (contentRaw.length() > 1 && contentRaw.charAt(0) == '.' && contentRaw.charAt(1) != '.') {
+                    CommandListenerWrapper clw = mainI.ingobotNPC.cQ();
+                    mainI.nmsServer.aA().a(clw, "/" + contentRaw.substring(1));
                 }
                 else Bukkit.broadcastMessage("[IngoBot] " + contentRaw);
                 syncCommands.removeFirst();

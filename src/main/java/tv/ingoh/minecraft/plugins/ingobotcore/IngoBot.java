@@ -2,9 +2,11 @@ package tv.ingoh.minecraft.plugins.ingobotcore;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent.Action;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
 
 public class IngoBot {
@@ -35,6 +37,7 @@ public class IngoBot {
             if (s != null) sendMessageRaw(message, s, discord);
         }
 	}
+
     public static void sendMessageToRaw(BaseComponent[] message, DiscordInterface discord, boolean isPublic, String sender) {
         if (isPublic) sendMessageRaw(message, discord);
         else {
@@ -44,20 +47,47 @@ public class IngoBot {
 	}
 
     public static void sendMessageRaw(String message, DiscordInterface discord) {
-        Bukkit.broadcastMessage(message);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendRawMessage(message);
+        }
         discord.sendChat(message, true);
     }
+
     public static void sendMessageRaw(BaseComponent[] message, DiscordInterface discord) {
         Bukkit.getServer().spigot().broadcast(message);
+        for (BaseComponent component : message) {
+            String msg = component.toPlainText();
+            if (component.isUnderlined()) msg = "__" + msg + "__";
+            if (component.isBold()) msg = "**" + msg + "**";
+            if (component.isItalic()) msg = "*" + msg + "*";
+            if (component.isStrikethrough()) msg = "~~" + msg + "~~";
+            if (component.isObfuscated()) msg = "||" + msg + "||";
+            discord.sendChat(msg);
+            if (component.getClickEvent() != null && component.getClickEvent().getAction() == Action.OPEN_URL) {
+                discord.sendChat("(" + component.getClickEvent().getValue() + ")");
+            }
+        }
     }
 
     public static void sendMessageRaw(String message, CommandSender user, DiscordInterface discord) {
         user.sendMessage(message);
-        discord.sendChat(message, false);
+        discord.sendChat("(to " + user.getName() + ") " + message, false);
     }
 
     public static void sendMessageRaw(BaseComponent[] message, CommandSender user, DiscordInterface discord) {
         user.spigot().sendMessage(message);
+        for (BaseComponent component : message) {
+            String msg = component.toPlainText();
+            if (component.isUnderlined()) msg = "__" + msg + "__";
+            if (component.isBold()) msg = "**" + msg + "**";
+            if (component.isItalic()) msg = "*" + msg + "*";
+            if (component.isStrikethrough()) msg = "~~" + msg + "~~";
+            if (component.isObfuscated()) msg = "||" + msg + "||";
+            discord.sendChat("(to " + user.getName() + ") " + msg);
+            if (component.getClickEvent() != null && component.getClickEvent().getAction() == Action.OPEN_URL) {
+                discord.sendChat("(" + component.getClickEvent().getValue() + ")");
+            }
+        }
     }
 
     public static void sendMessagesFromAsync(Main main, String messages) {
@@ -98,6 +128,10 @@ public class IngoBot {
 
     public static void sendMessageRawFromAsync(Main main, String message, String user) {
         main.scheduleMessage(new Message(message, user));
+    }
+
+    public static void sendFormattedMessageFromAsync(Main main, String message) {
+        main.scheduleMessage(new FormattedMessage(message, null));
     }
 
 }

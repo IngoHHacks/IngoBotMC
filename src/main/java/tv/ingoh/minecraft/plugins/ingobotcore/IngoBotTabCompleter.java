@@ -8,7 +8,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
-import tv.ingoh.util.DateUtils;
 import tv.ingoh.util.calculator.Calculator;
 
 public class IngoBotTabCompleter implements TabCompleter {
@@ -35,6 +34,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         "strikethrough",
         "underlined",
         "userinfo",
+        "wikisearch"
     };
 
     final List<String> COUNTDOWNVALUES = List.of("3", "5", "10", "30", "60");
@@ -73,9 +73,12 @@ public class IngoBotTabCompleter implements TabCompleter {
         LinkedList<String> possible = new LinkedList<>();
         for (String cmd : COMMANDS) {
             if (cmd.startsWith(string)) {
-                if (!cmd.toLowerCase().equals("furry") || DateUtils.isAfterAprilFools2022()) {
-                    possible.add(cmd);
-                }
+                possible.add(cmd);
+            }
+        }
+        for (String cmd : COMMANDS) {
+            if (cmd.contains(string) && !possible.contains(cmd)) {
+                possible.add(cmd);
             }
         }
         return possible;

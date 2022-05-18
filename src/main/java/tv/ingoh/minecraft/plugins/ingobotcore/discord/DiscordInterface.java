@@ -49,6 +49,7 @@ public class DiscordInterface {
     }
 
     public void sendChat(String string) {
+        string = formatCodes(string);
         discord.getTextChannelById(channels.textChannel).sendMessage(string).queue();
         if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
             ExternalMessageEvent messageEvent = new ExternalMessageEvent(string);
@@ -57,12 +58,65 @@ public class DiscordInterface {
     }
 
     public void sendChat(String string, boolean sendMinecord) {
+        string = formatCodes(string);
         discord.getTextChannelById(channels.textChannel).sendMessage(string).queue();
         if (sendMinecord && Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
             ExternalMessageEvent messageEvent = new ExternalMessageEvent(string);
             main.scheduleMinecord(messageEvent);
         }
     }
+    private String formatCodes(String string) {
+        try {
+            String endReplacement = "";
+            StringBuilder builder = new StringBuilder(string);
+            for (int i = 0; i < builder.length() - 1; i++) {
+                if (builder.charAt(i) == '§') {
+                    if (builder.charAt(i+1) == 'k' || builder.charAt(i+1) == 'K') {
+                        builder.delete(i, i+2);
+                        builder.insert(i, "||");
+                        endReplacement = "||" + endReplacement;
+                    }
+                    else if (builder.charAt(i+1) == 'l' || builder.charAt(i+1) == 'L') {
+                        builder.delete(i, i+2);
+                        builder.insert(i, "**");
+                        endReplacement = "**" + endReplacement;
+                    }
+                    else if (builder.charAt(i+1) == 'm' || builder.charAt(i+1) == 'M') {
+                        builder.delete(i, i+2);
+                        builder.insert(i, "~~");
+                        endReplacement = "~~" + endReplacement;
+                    }
+                    else if (builder.charAt(i+1) == 'n' || builder.charAt(i+1) == 'N') {
+                        builder.delete(i, i+2);
+                        builder.insert(i, "__");
+                        endReplacement = "__" + endReplacement;
+                    }
+                    else if (builder.charAt(i+1) == 'o' || builder.charAt(i+1) == 'O') {
+                        builder.delete(i, i+2);
+                        builder.insert(i, "*");
+                        endReplacement = "*" + endReplacement;
+                        i -= 1;
+                    }
+                    else if (builder.charAt(i+1) == 'r' || builder.charAt(i+1) == 'R') {
+                        builder.delete(i, i+2);
+                        builder.insert(i, endReplacement);
+                        endReplacement = "";
+                        i += endReplacement.length() - 2;
+                    } else {
+                        builder.delete(i, i+2);
+                        i -= 2;
+                    }
+                }
+            }
+            builder.append(endReplacement);
+            return builder.toString();
+        } catch (Exception e) {
+            sendDebug("ERROR! FAILED TO FORMAT MESSAGE: " + string);
+            printStackTrace(e.getStackTrace());
+            return string;
+        }
+    }
+
     public void sendInfoChat(String string) {
         discord.getTextChannelById(channels.textChannel).sendMessage("[INFO] " + string).queue();
     }
@@ -72,6 +126,7 @@ public class DiscordInterface {
     }
 
     public void sendTo(long channelId, String string) {
+        string = formatCodes(string);
         discord.getTextChannelById(channelId).sendMessage(string).queue();
     }
 

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +47,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
+import net.minecraft.network.NetworkManager;
 import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityHeadRotation;
 import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
@@ -65,6 +67,7 @@ import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
 import tv.ingoh.util.Mongo;
 import tv.ingoh.util.PlayerListHandler;
+import tv.ingoh.util.RandomThings;
 
 public class Main extends JavaPlugin implements Listener {
 
@@ -84,6 +87,10 @@ public class Main extends JavaPlugin implements Listener {
     LinkedList<OfflinePlayer> whitelistQueue;
     LinkedList<Mob> sacrifices;
     LinkedList<Integer> sacrificeAges;
+
+    MinecraftServer nmsServer;
+    WorldServer nmsWorld; // First world (overworld)
+    GameProfile gameProfile;
 
     Mongo mongo;
     BukkitTask mongoTask;
@@ -132,9 +139,9 @@ public class Main extends JavaPlugin implements Listener {
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, mainLoop, 0, 1);
 
         // Entity
-        MinecraftServer nmsServer = ((CraftServer) Bukkit.getServer()).getServer();
-        WorldServer nmsWorld = ((CraftWorld)Bukkit.getWorlds().get(0)).getHandle(); // First world (overworld)
-        GameProfile gameProfile = new GameProfile(UUID.randomUUID(), "IngoBot");
+        nmsServer = ((CraftServer) Bukkit.getServer()).getServer();
+        nmsWorld = ((CraftWorld)Bukkit.getWorlds().get(0)).getHandle(); // First world (overworld)
+        gameProfile = new GameProfile(UUID.fromString("54655d3e-47ae-43f8-8108-310967590778"), "IngoBot");
 
         // SKIN
         try {
@@ -157,8 +164,20 @@ public class Main extends JavaPlugin implements Listener {
             Bukkit.getLogger().warning("Error while opening connection when loading IngoBot skin.");
             e.printStackTrace();
         }
-        ingobotNPC = new EntityPlayer(nmsServer, nmsWorld, gameProfile);
+        ingobotNPC = new ListeningNPC(nmsServer, nmsWorld, gameProfile, this, discord);
+
+        ingobotNPC.m(true); // Invulnerable
+
+        NetworkManager conn = NetworkManager.a(InetSocketAddress.createUnresolved(Bukkit.getIp(), Bukkit.getPort()), true);
+
+        nmsWorld.a(ingobotNPC);
+        
+        nmsServer.ac().a(conn, ingobotNPC);
+        nmsServer.ac().t().add(ingobotNPC);
+
         ingobotNPC.b(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
+
+        RandomThings.initialize();
     }
 
     @Override
@@ -400,5 +419,21 @@ public class Main extends JavaPlugin implements Listener {
 
     public Mongo getMongo() {
         return mongo;
+    }
+
+    public MinecraftServer getNmsServer() {
+        return nmsServer;
+    }
+
+    public WorldServer getNmsWorld() {
+        return nmsWorld;
+    }
+
+    public EntityPlayer getIngobotNPC() {
+        return ingobotNPC;
+    }
+
+    public GameProfile getGameProfile() {
+        return gameProfile;
     }
 }

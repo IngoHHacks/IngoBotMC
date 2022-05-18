@@ -13,17 +13,24 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.chat.ComponentSerializer;
 import tv.ingoh.minecraft.plugins.ingobotcore.Config;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
+import tv.ingoh.util.Escape;
 import tv.ingoh.util.Filter;
 
 
@@ -35,7 +42,8 @@ public class AsyncWebThread implements Runnable {
         CHAT,
         COLOR,
         IMAGE,
-        USERINFO;
+        USERINFO,
+        WIKISEARCH;
     }
 
     final static String CHAT = "https://ingoh.net/capi/%1/%0";
@@ -157,6 +165,43 @@ public class AsyncWebThread implements Runnable {
                         break;
                     case COLOR:
                         colorUser(args[0], args[1], args[2], args[3]);
+                    case WIKISEARCH:
+                    try {
+                        URL url2;
+                        url2 = new URL("https://ingoh.net/simpmc/wiki/api.php?action=query&list=search&srsearch="
+                                + URLEncoder.encode(args[0], "utf-8") + "&srwhat=text&utf8=&format=json");
+                        InputStream in = url2.openStream();
+                        BufferedReader r = new BufferedReader(new InputStreamReader(in));
+                        String s3 = r.readLine();
+                        Gson g = new Gson();
+                        JsonObject j = (JsonObject) g.fromJson(s3, JsonObject.class);
+                        j = (JsonObject) j.get("query");
+                        JsonArray a = (JsonArray) j.get("search");
+                        j = (JsonObject) a.get(0);
+                        String stitle = j.get("title").getAsString();
+                        url2 = new URL(
+                                "https://ingoh.net/simpmc/wiki/api.php?action=query&format=json&prop=extracts&exchars=150&exlimit=1&titles="
+                                        + URLEncoder.encode(stitle.replace(" ", "_"), "utf-8") + "&explaintext=1&formatversion=2");
+                        InputStream in2 = url2.openStream();
+                        BufferedReader r2 = new BufferedReader(new InputStreamReader(in2));
+                        String s2 = r2.readLine();
+                        Gson g2 = new Gson();
+                        JsonObject j2 = (JsonObject) g2.fromJson(s2, JsonObject.class);
+                        j2 = (JsonObject) j2.get("query");
+                        JsonArray a2 = (JsonArray) j2.get("pages");
+                        j2 = (JsonObject) a2.get(0);
+                        String title = j2.get("title").getAsString();
+                        String extract = j2.get("extract").getAsString();
+                        IngoBot.sendMessageTo(ChatColor.GOLD + title, discord, isPublic, q.user);
+                        IngoBot.sendMessageTo(ChatColor.GOLD + Escape.escapeAll(extract), discord, isPublic, q.user);
+                        String link = "https://ingoh.net/simpmc/wiki/index.php/" + URLEncoder.encode(title.replace(" ", "_"), "utf-8").replace("%3A", ":");
+                        ComponentBuilder builder = new ComponentBuilder("[LINK TO " + title + "]")
+                        .event(new ClickEvent(ClickEvent.Action.OPEN_URL, link))
+                        .underlined(true);
+                        IngoBot.sendMessageToRaw(builder.create(), discord, isPublic, q.user);
+                    } catch (Exception e) {
+                        IngoBot.sendMessageTo("Page not found!", discord, isPublic, q.user);
+                    }
                     default:
                         break;
 
