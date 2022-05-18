@@ -10,7 +10,7 @@ public class RandomTaglines {
         "\"*nuzzles ur secret* UwU\"",
         "\"1, 2, 3! Go! Go! Go! Ahh! Whoops! Too slow! My feet slipped! What a dumb mistake! I should be more careful! Oh, no! I broke the glass! There goes the lamp! That's terrible! But at least I didn't break the egg! Whew! That was close!\"",
         "\"A big thanks to everyone who supported me on Ko-fi! Without your help, I wouldn't be able to make games about eggs!\"",
-        "\"A total of [0] Rule 34 art of me can be found on this server. It's so sad! Why aren't there more? Where are all of the sexy drawings of me? I demand answers!\"",
+        //"\"A total of [0] Rule 34 art of me can be found on this server. It's so sad! Why aren't there more? Where are all of the sexy drawings of me? I demand answers!\"",
         //"\"AI generated secrets are like AI generated porn -- absolutely hilarious!\"",
         "\"Are you a good person? Are you kind? Do you help others? If you answered yes to any of these questions, then I think we could be friends! I'd love to be your friend!\"",
         "\"Boom! Boom! Boom! Oh, man! Those fireworks were amazing! I wish I had a better view! Maybe next year I'll make sure to bring a pair of binoculars!\"",
