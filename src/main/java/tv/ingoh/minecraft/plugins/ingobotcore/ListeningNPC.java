@@ -27,7 +27,7 @@ public class ListeningNPC extends EntityPlayer {
     public void a(IChatBaseComponent ichatbasecomponent, ChatMessageType cType, UUID uuid) {
         super.a(ichatbasecomponent, cType, uuid);
         for (IChatBaseComponent component : ichatbasecomponent) {
-            discord.sendChat(ichatbasecomponent.getString());
+            discord.sendChat(ichatbasecomponent.getString(), false);
         }
     }
 }
