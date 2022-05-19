@@ -1,2 +1,3 @@
 # IngoBot Core
-IngoBot Core Plugin
+IngoBot Core Plugin  
+(Not intended for public use)
