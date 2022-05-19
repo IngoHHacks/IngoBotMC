@@ -1,5 +1,8 @@
 package tv.ingoh.util;
 
+import java.text.DateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,7 +28,7 @@ public class PlayerListHandler {
                 eBuilder.appendDescription(role + player + "\n");
             }
         });
-        eBuilder.appendDescription("<:bot:955431358195462164> IngoBot");
+        eBuilder.appendDescription("Last update: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         discord.editMessage(config.getcPlayerlist(), config.getmPlayerlist(), eBuilder.build());
     }
 

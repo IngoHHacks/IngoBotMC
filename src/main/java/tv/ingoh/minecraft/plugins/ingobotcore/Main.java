@@ -175,6 +175,8 @@ public class Main extends JavaPlugin implements Listener {
 
             NetworkManager conn = NetworkManager.a(address, true);
 
+            ingobotNPC.getBukkitEntity().setSleepingIgnored(true);
+
             nmsWorld.a(ingobotNPC); // Add to overworld
 
             nmsServer.ac().a(conn, ingobotNPC); // Summon to create connection
