@@ -368,7 +368,7 @@ public class CoreCommands {
     private static boolean tryFormatColor(String command, String argsS, DiscordInterface discord, boolean isPublic, String user) {
         boolean isColor = false;
         for (Colors c : Colors.values()) {
-            if (c.name().replace("_", "").replace("'", "").replace("-", "_").replace("grey", "gray").equalsIgnoreCase(command.toUpperCase().replace("_", "").replace("grey", "gray"))){
+            if (c.name().replace("_", "").replace("'", "").replace("-", "_").toLowerCase().replace("grey", "gray").equals(command.toLowerCase().replace("_", "").replace("grey", "gray"))){
                 isColor = true;
                 if (argsS.length() > 0){
                     ComponentBuilder cb = new ComponentBuilder(argsS)
