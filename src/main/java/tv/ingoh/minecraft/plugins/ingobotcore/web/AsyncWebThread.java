@@ -165,6 +165,7 @@ public class AsyncWebThread implements Runnable {
                         break;
                     case COLOR:
                         colorUser(args[0], args[1], args[2], args[3]);
+                        break;
                     case WIKISEARCH:
                     try {
                         URL url2;
