@@ -107,6 +107,7 @@ public class DiscordInterface {
                         i -= 2;
                     }
                 }
+                if (i < -1) i = -1;
             }
             builder.append(endReplacement);
             return builder.toString();
