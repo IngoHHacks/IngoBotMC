@@ -30,7 +30,6 @@ import tv.ingoh.minecraft.plugins.ingobotcore.Config;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
 import tv.ingoh.minecraft.plugins.ingobotcore.discord.DiscordInterface;
-import tv.ingoh.util.Escape;
 import tv.ingoh.util.Filter;
 
 
@@ -42,6 +41,7 @@ public class AsyncWebThread implements Runnable {
         CHAT,
         COLOR,
         IMAGE,
+        REMOVEHISTORY,
         USERINFO,
         WIKISEARCH;
     }
@@ -117,6 +117,21 @@ public class AsyncWebThread implements Runnable {
                         } catch (Exception e) {
                             discord.sendDebug("Unhandled Exception: " + e.toString());
                             discord.printStackTrace(e.getStackTrace());
+                        }
+                        break;
+                    case REMOVEHISTORY:
+                        int count = Integer.MAX_VALUE;
+                        if (args.length > 0) {
+                            count = Integer.parseInt(args[0]);
+                        }
+                        String last = ch.getLast(user, isPublic);
+                        int removed = ch.remove(user, isPublic, count);
+                        if (removed == 1) {
+                            IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed entry " + ChatColor.YELLOW + "'" + last + "'" + ChatColor.GOLD  +" from history.", discord, isPublic, q.user);
+                        } else if (removed == 0) {
+                            IngoBot.sendMessageToRaw(ChatColor.RED + "History is already empty, idiot.", discord, isPublic, q.user);
+                        }else {
+                            IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed " + removed + " entries from history.", discord, isPublic, q.user);
                         }
                         break;
                     case USERINFO:

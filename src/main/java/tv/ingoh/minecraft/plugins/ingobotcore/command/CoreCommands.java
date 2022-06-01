@@ -115,8 +115,14 @@ public class CoreCommands {
                     }
                     wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gptneo"}, isPublic));
                     return new CommandResult(ResultType.SUCCESS, command);
+                case "CLEARHISTORY":
+                    wt.clearHist(sender, isPublic);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "UNDOHISTORY":
+                    wt.undoHist(sender, isPublic);
+                    return new CommandResult(ResultType.SUCCESS, command);
                 case "COUNTDOWN":
-                    if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1+");
+                    if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1");
                     else if (args.length > 1) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
                     double time;
                     try {

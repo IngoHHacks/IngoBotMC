@@ -18,6 +18,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         "c",
         "calc",
         "countdown",
+        "clearhistory",
         "cum",
         "eyes",
         "f",
@@ -33,6 +34,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         "s",
         "strikethrough",
         "underlined",
+        "undohistory",
         "userinfo",
         "wikisearch"
     };

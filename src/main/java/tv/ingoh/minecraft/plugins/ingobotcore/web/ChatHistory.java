@@ -32,4 +32,33 @@ public class ChatHistory {
         if (history.size() > 0) history.removeLast();
     }
 
+    public int remove(String user, boolean isPublic, int count) {
+        try {
+            int removed = 0;
+            int i = history.size() - 1;
+            while (count > 0 && i >= 0) {
+                if (history.get(i).user.equals(isPublic ? "*" : user)) {
+                    history.remove(i);
+                    removed++;
+                    count--;
+                }
+                i--;
+            }
+            return removed;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    public String getLast(String user, boolean isPublic) {
+        int i = history.size() - 1;
+        while (i >= 0) {
+            if (history.get(i).user == (isPublic ? "*" : user)) {
+                return history.get(i).string;
+            }
+            i--;
+        }
+        return "[empty]";
+    }
+
 }

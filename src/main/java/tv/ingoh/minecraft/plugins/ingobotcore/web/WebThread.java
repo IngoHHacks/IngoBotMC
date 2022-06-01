@@ -3,6 +3,7 @@ package tv.ingoh.minecraft.plugins.ingobotcore.web;
 import org.bukkit.Bukkit;
 
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
+import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
 
 public class WebThread {
 
@@ -19,5 +20,13 @@ public class WebThread {
 
     public void end() {
         a.end = true;
+    }
+
+    public void undoHist(String user, boolean isPublic) {
+        a.add(new Query(Type.REMOVEHISTORY, user, new String[]{"1"}, isPublic));
+    }
+
+    public void clearHist(String user, boolean isPublic) {
+        a.add(new Query(Type.REMOVEHISTORY, user, new String[]{}, isPublic));
     }
 }
