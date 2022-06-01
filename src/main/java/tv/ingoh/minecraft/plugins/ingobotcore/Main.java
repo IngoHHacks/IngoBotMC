@@ -1,9 +1,6 @@
 package tv.ingoh.minecraft.plugins.ingobotcore;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -14,7 +11,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.security.auth.login.LoginException;
 
 import com.mojang.authlib.GameProfile;
@@ -51,8 +47,10 @@ import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityHeadRotation;
+import net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata;
 import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
 import net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo;
+import net.minecraft.network.syncher.DataWatcherObject;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.WorldServer;
@@ -72,6 +70,13 @@ import tv.ingoh.util.PlayerListHandler;
 import tv.ingoh.util.RandomThings;
 
 public class Main extends JavaPlugin implements Listener {
+
+    final static String INGODOG_VALUE = "ewogICJ0aW1lc3RhbXAiIDogMTY1NDEwNjgwMDQzNywKICAicHJvZmlsZUlkIiA6ICI2MTA4NWI1MTViZmQ0ZTRjOWNkM2U0OTRkZTNiMGFkMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJJbmdvSCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8zOWM3OWRhNGU4Mjc4NWQ2OTJmNzIwZDgzMGVkYWNiNDExZGJiYzhlNDM0MWIwODkzZDdiNzk4ODBiNjE1OWEyIgogICAgfSwKICAgICJDQVBFIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8xNzkxMjc5MGZmMTY0YjkzMTk2ZjA4YmE3MWQwZTYyMTI5MzA0Nzc2ZDBmMzQ3MzM0ZjhhNmVhZTUwOWY4YTU2IgogICAgfQogIH0KfQ==";
+    final static String INGODOG_SIGNATURE = "qAcVd/ibckIQAjXp5GCwmbg5jvNJBgxwOMKy6mASRM6DBFHx2sBFqxa7/4igY+q1IAt1W6RVL6oyH13ld8PrtU6zQWlGaNNZXmuOyv1NiKZZRjInoYC9nv+IwqSsouOaUNf3oNsK8c7m4K/XKd5nSFGx4yoYdcx3lKbyAptqDHI8dLH+yIURw4nSea/69HwB4u7b47vCMMCUxCU6tEOUF5hycngUn+j1yso0ASq1rRlLWDrtFC+5QxF1lwgKNTi/oXTOfSxEZTE6g0Lizz8xp0EZ/bXjoayEQQLR/2bD3ANGWgIMglm57yf+ksyeBJ/CSMOIQjq0JwIoPMThf59u3oUAm7bgaZsy5k9iLxOJm0CP132U37OUnV29UFbF1gAGjrYJJaQMNfOGmOrLqfxSbON73GrZwgnnH6CPppRCuuNE2VC1gNcfY3pFw3zgEcajjtc+3XWd/nU9LDnxkco0iKSt5EZ12VKMAmt4GSX+OmzDM59IvyP2uZA7nZvIjuaFUVvtIJHUYDfgO4NiIGvPpp99r9dxjhm5b8rMuYzdz5h4jU1G+tszypMB2NRKAZEgpZSaDwkxB1asHX5GBlJBSnMR8mZuhRkAZJmbMjF89cfxo8Q5HX7Npjf/fQQol/U6938QX1DNtl9rxEMsBbgOXykK3x+MlIVDJXC/eQyuQiE=";
+    final static String INGOFOX_VALUE = "ewogICJ0aW1lc3RhbXAiIDogMTY1NDEwNjkxMTg5OSwKICAicHJvZmlsZUlkIiA6ICI1NDY1NWQzZTQ3YWU0M2Y4ODEwODMxMDk2NzU5MDc3OCIsCiAgInByb2ZpbGVOYW1lIiA6ICJJbmdvQm90IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzk2ZmJiZjM0YWRmMmNjMjdkYzU0MDBhNTNlYTdlMmM2ZGI4NGJjYjkzODJlOTUzMTQ2Yjk5YjFlODVmZTUyMzUiCiAgICB9LAogICAgIkNBUEUiIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzIzNDBjMGUwM2RkMjRhMTFiMTVhOGIzM2MyYTdlOWUzMmFiYjIwNTFiMjQ4MWQwYmE3ZGVmZDYzNWNhN2E5MzMiCiAgICB9CiAgfQp9";
+    final static String INGOFOX_SIGNATURE = "SAax+T4KD2MTUf/FBuPuUdNwmC7vNluKHVAIg6WZcqPsjZ1Qh000udD5k4DyBSj9z+P7p50Rdbyx3plK2m1NByk+sqfCvd9HcQ6cHZoDQf73r1h+EU4MUbCpXh0VU93htZVsH9/DeeY/gakp6Z/FB0eywlmunKKx3GSZ9wun3NshIDNerxqs8F5EYA5LLnJGC6J4lIY8yWbc8w3fJUFjFweJjC0o+YaeCzLrrDD751xDArE6pTRoU/wvxU0An9kvrDWvx2h2omD7NzL0T6VdV7i32Sz5GAZn2y8Zk3We9aKzzfNhS3LfZuEOKOyqSki+TwM0Q2ZLV5btcQ3pCEPTSmDVWQlFIaILMWSbfWf8NdpwDegGNW8y0OELI2EzdC2il+H1iwHzHiMhQ5/HEAZxnwdbVSuLhMfiIK5GrunP+cX50FHdLTDHProBYbEIu/7OY/Junrow7KEd0gcvJa8yoJi+WOCW9e5A4bJDTWNAObxB3TN0TRsuDFmj58y+njSQgtjBNvbCvGPBCTVp7I16qXWvDVb16sBhA9ZBEGK0L4RmBQz4eCnqeiPq7K3N/Odw7V1I9CKOjaYkaTYNp/16gBoj+awSBXhKrQ65qz1cKGwyThuETbaZtSEfefqOSYDVTtGdwDQmqhY7HJqBIoHj3ARz2gFnP0OykoyKVHnKlLU=";
+    final static String INGOFOX_WITH_MAPMAKER_CAPE_VALUE = "ewogICJ0aW1lc3RhbXAiIDogMTY1NDEwNzE5MDM2OSwKICAicHJvZmlsZUlkIiA6ICI2MTA4NWI1MTViZmQ0ZTRjOWNkM2U0OTRkZTNiMGFkMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJJbmdvSCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS85NmZiYmYzNGFkZjJjYzI3ZGM1NDAwYTUzZWE3ZTJjNmRiODRiY2I5MzgyZTk1MzE0NmI5OWIxZTg1ZmU1MjM1IgogICAgfSwKICAgICJDQVBFIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8xNzkxMjc5MGZmMTY0YjkzMTk2ZjA4YmE3MWQwZTYyMTI5MzA0Nzc2ZDBmMzQ3MzM0ZjhhNmVhZTUwOWY4YTU2IgogICAgfQogIH0KfQ==";
+    final static String INGOFOX_WITH_MAPMAKER_CAPE_SIGNATURE = "tta+gV+zvVB+I6YMWwuSCmbXUF/go+wMwdUREKd5GS0XxKpy4jchQbZqYb+iwIWf0GVAKdZxyR+7YxK3yctaF76C3joIDIqEodLShLC0cAWZE/mlmttMV5aLmhMsw6QrAFbXSjiSKpVpniWMUMVy7d8wvtkFkYVuAQNvxIgbJHsFj5xswBZ1k1uUntA6LPKx8jQlLdMbRb/GLHetlR4EnG3xY0VNtVjhjE+Qezs9NYsmN65jjlW8laXLGFTaZcuw5qWoEbmQsD71MDvCxemEk4e9ljI/jYkumo2XMU/JokenHAi8y+yoSsUq63kw4ihbiGG4z/I/kmBy6Om3W3xOUjzTxsXIP0JHO8UR7t68r1x/SmL3tuZUuEKHuaIRXC3d2JqKzqu8bU6L5odXElLfvk1EcSMOYVdb6dOQgSbYcsEGkmImCTE0i177u3ZVhJOfyTDo4LurOmEe4WUHPD8i1WH/f3okTr6PZuIFwCqOS7CbLja37YOysfH8Mddmhy7KsLmw1q5V67XJ5EBv/KVfQxGhWSR9AaZAbvWN2EBdSYL9ODm1JUM/n/oTO13ybj8OWbO8xwUFg1Dw1yDjBIUU8oP+a9MdIt9TzvuAujtlDUnukFcbsNR2iPKX5yBM2hu2YjdFiPDF0PxENqBxq4f+MzWxXnUsEVxf2w1JlJoNG3g=";
 
     JavaPlugin plugin;
     public Config config;
@@ -146,29 +151,21 @@ public class Main extends JavaPlugin implements Listener {
         gameProfile = new GameProfile(UUID.fromString("54655d3e-47ae-43f8-8108-310967590778"), "IngoBot");
 
         // SKIN
-        try {
-            HttpsURLConnection connection = (HttpsURLConnection) new URL(String.format("https://api.ashcon.app/mojang/v2/user/%s", "IngoBot")).openConnection();
-            if (connection.getResponseCode() == HttpsURLConnection.HTTP_OK) {
-                ArrayList<String> lines = new ArrayList<>();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                reader.lines().forEach(line -> lines.add(line));
-                String reply = String.join(" ", lines);
-                int indexOfValue = reply.indexOf("\"value\": \"");
-                int indexOfSignature = reply.indexOf("\"signature\": \"");
-                String skin = reply.substring(indexOfValue + 10, reply.indexOf("\"", indexOfValue + 10));
-                String signature = reply.substring(indexOfSignature + 14, reply.indexOf("\"", indexOfSignature + 14));
-                gameProfile.getProperties().put("textures", new Property("textures", skin, signature));
-            }
-            else {
-                Bukkit.getLogger().warning("Failed to open connection when loading IngoBot skin: " + connection.getResponseCode() + ", " + connection.getResponseMessage());
-            }
-        } catch (IOException e) {
-            Bukkit.getLogger().warning("Error while opening connection when loading IngoBot skin.");
-            e.printStackTrace();
-        }
+        gameProfile.getProperties().put("textures", new Property("textures", INGOFOX_VALUE, INGOFOX_SIGNATURE));
+
         ingobotNPC = new ListeningNPC(nmsServer, nmsWorld, gameProfile, this, discord);
 
         ingobotNPC.m(true); // Invulnerable
+
+        Field f2;
+        try {
+            f2 = EntityPlayer.class.getField("bP"); // DATA_PLAYER_MODE_CUSTOMISATION 
+            f2.setAccessible(true);
+            DataWatcherObject<Byte> dpmc = (DataWatcherObject<Byte>) f2.get(null);
+            ingobotNPC.ai().b(dpmc, (byte) 126); // Enable second layer (no cape)
+        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            Bukkit.getLogger().warning("[IngoBotCore] bP field not found");
+        }
 
         try {
             InetSocketAddress address = new InetSocketAddress(Bukkit.getIp(), Bukkit.getPort());
@@ -369,6 +366,7 @@ public class Main extends JavaPlugin implements Listener {
         connection.a(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a /* add */, npc));
         connection.a(new PacketPlayOutNamedEntitySpawn(npc));
         connection.a(new PacketPlayOutEntityHeadRotation(npc, (byte)(64)));
+        connection.a(new PacketPlayOutEntityMetadata(npc.ae(), npc.ai(), true));
     }
 
     public void playAttackAnimationFor(EntityPlayer npc, Player target) {
