@@ -469,7 +469,7 @@ public class Main extends JavaPlugin implements Listener {
         Location li = ingobotNPC.getBukkitEntity().getLocation().clone().add(0, 1.6, 0);
         Location l = li.clone().add(-1, 0, 0);
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.equals(ingobotNPC.getBukkitEntity())) continue;
+            if (player.equals(ingobotNPC.getBukkitEntity()) || (player.getWorld() != ingobotNPC.getBukkitEntity().getWorld())) continue;
             if (player.getGameMode() != GameMode.SPECTATOR) {
                 double nd = player.getLocation().clone().add(0, 1.6, 0).distance(li);
                 if (nd < dist) {
@@ -479,7 +479,7 @@ public class Main extends JavaPlugin implements Listener {
             }
         }
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.equals(ingobotNPC.getBukkitEntity())) continue;
+            if (player.equals(ingobotNPC.getBukkitEntity()) || (player.getWorld() != ingobotNPC.getBukkitEntity().getWorld())) continue;
             if (player.getLocation().clone().add(0, 1.6, 0).distance(li) < 50) {
                 PlayerConnection connection = ((CraftPlayer)player).getHandle().b; /* playerconnection */
                 Tuple<Double, Double> rotation = rotateTowards(li, l);
