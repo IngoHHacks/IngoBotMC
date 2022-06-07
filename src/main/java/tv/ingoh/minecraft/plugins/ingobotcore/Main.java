@@ -13,15 +13,13 @@ import java.util.UUID;
 
 import javax.security.auth.login.LoginException;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
-import com.mongodb.client.model.Updates;
-
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -43,9 +41,14 @@ import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.mongodb.client.model.Updates;
+
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
+import net.minecraft.network.protocol.game.PacketPlayOutEntity.PacketPlayOutEntityLook;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityHeadRotation;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata;
 import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
@@ -56,6 +59,7 @@ import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.server.players.PlayerList;
+import net.minecraft.util.Tuple;
 import tv.ingoh.minecraft.plugins.ingobotcore.chat.ChatThread;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ChatMessage;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
@@ -265,7 +269,7 @@ public class Main extends JavaPlugin implements Listener {
         }
         return sb.toString().trim();
     }
-
+    
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Mob)) return;
@@ -458,5 +462,53 @@ public class Main extends JavaPlugin implements Listener {
 
     public GameProfile getGameProfile() {
         return gameProfile;
+    }
+
+    public void watchTick() {
+        double dist = 10;
+        Location li = ingobotNPC.getBukkitEntity().getLocation().clone().add(0, 1.6, 0);
+        Location l = li.clone().add(-1, 0, 0);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.equals(ingobotNPC.getBukkitEntity())) continue;
+            if (player.getGameMode() != GameMode.SPECTATOR) {
+                double nd = player.getLocation().clone().add(0, 1.6, 0).distance(li);
+                if (nd < dist) {
+                    l = player.getLocation().clone().add(0, 1.6, 0);
+                    dist = nd;
+                }
+            }
+        }
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.equals(ingobotNPC.getBukkitEntity())) continue;
+            if (player.getLocation().clone().add(0, 1.6, 0).distance(li) < 50) {
+                PlayerConnection connection = ((CraftPlayer)player).getHandle().b; /* playerconnection */
+                Tuple<Double, Double> rotation = rotateTowards(li, l);
+                connection.a(new PacketPlayOutEntityHeadRotation(ingobotNPC, (byte)(rotation.a() * (256.0 / 360.0))));
+                connection.a(new PacketPlayOutEntityLook(ingobotNPC.ae(), (byte)(rotation.a() * (256.0 / 360.0)), (byte)(rotation.b() * (256.0 / 360.0)), true));
+            }
+        }
+    }
+
+    public void bonk() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Location l = player.getLocation();
+            if (l.getX() > 155.5 && l.getX() < 165.5 &&  l.getY() > 50 && l.getY() < 60 && l.getZ() > 203.5 && l.getZ() < 213.5) {
+                PlayerConnection connection = ((CraftPlayer)player).getHandle().b; /* playerconnection */
+                connection.a(new PacketPlayOutAnimation(ingobotNPC, 1));
+            }
+        }
+    }
+
+    private Tuple<Double, Double> rotateTowards(Location from, Location to) {
+        double dx = to.getX()-from.getX();
+        double dy = to.getY()-from.getY();
+        double dz = to.getZ()-from.getZ();
+        double r = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        double yaw = -Math.atan2(dx,dz)/Math.PI*180;
+        if (yaw < 0) {
+            yaw = 360 + yaw;
+        }
+        double pitch = -Math.asin(dy/r)/Math.PI*180;
+        return new Tuple<Double,Double>(yaw, pitch);
     }
 }

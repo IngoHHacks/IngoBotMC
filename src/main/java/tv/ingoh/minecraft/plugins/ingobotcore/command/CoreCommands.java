@@ -2,7 +2,16 @@ package tv.ingoh.minecraft.plugins.ingobotcore.command;
 
 import java.awt.Color;
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.function.Function;
+
+import org.apache.commons.lang.StringUtils;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
@@ -10,22 +19,12 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
 
-import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.lang.StringUtils;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Registry;
-import org.bukkit.Sound;
-import org.bukkit.entity.Player;
-
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-import net.minecraft.util.Tuple;
+import net.minecraft.world.level.levelgen.structure.WorldGenStrongholdPieces.q;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBotTabCompleter;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
@@ -42,6 +41,8 @@ public class CoreCommands {
 
     static long imageCooldownTime = 0;
     static int count69 = -1;
+
+    static HashMap<String, Query> lastQueries = new HashMap<>();
 
     public static CommandResult executeCommand(ScheduledCommand cmd) {
         return executeCommand(cmd.main, cmd.getString(), cmd.getArgs(), cmd.getSender(), cmd.getwThread(), cmd.isPublic(), cmd.getDiscord());
@@ -61,6 +62,7 @@ public class CoreCommands {
             TextComponent selector = new TextComponent(sender);
             switch (command.toUpperCase()) {
                 // TODO: Use objects instead of switch cases
+                case "CALCULATE":
                 case "CALC":
                     if (args.length > 0) {
                         String[] result = Calculator.calculate(argsF);
@@ -79,6 +81,7 @@ public class CoreCommands {
                     } else {
                         return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1+");
                     }
+                case "CONVERSE":
                 case "C":
                     if (!isPublic) {
                         if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot: " + ChatColor.RESET + argsS);
@@ -86,8 +89,26 @@ public class CoreCommands {
                     } else {
                         discord.sendDebug("[" + sender + "] " + argsS);
                     }
-                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "false", "gpt2"}, isPublic));
+                    Query qq = new Query(Type.CHAT, sender, new String[]{argsS, "false", "gpt2"}, isPublic);
+                    wt.add(qq);
+                    lastQueries.put(isPublic ? "*" : sender, qq);
                     return new CommandResult(ResultType.SUCCESS, command);
+                case "RETRY":
+                    if (!isPublic) {
+                        if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot: " + ChatColor.RESET + "[RETRY]");
+                        discord.sendDebug("{" + sender + "} [RETRY]");
+                    } else {
+                        discord.sendDebug("[" + sender + "] [RETRY]");
+                    }
+                    Query qr = lastQueries.get(isPublic ? "*" : sender);
+                    if (qr != null) {
+                        wt.undo(qr);
+                        wt.add(qr);
+                    } else {
+                        IngoBot.sendMessageTo(ChatColor.RED + "There is nothing to retry, idiot.", discord, isPublic, sender);
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "FINISHSENTENCE":
                 case "FS":
                     if (!isPublic) {
                         if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot: " + ChatColor.RESET + argsS + "...");
@@ -95,7 +116,9 @@ public class CoreCommands {
                     } else {
                         discord.sendDebug("[" + sender + "] " + argsS + "...");
                     }
-                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gpt2"}, isPublic));
+                    Query qq2 = new Query(Type.CHAT, sender, new String[]{argsS, "true", "gpt2"}, isPublic);
+                    wt.add(qq2);
+                    lastQueries.put(isPublic ? "*" : sender, qq2);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "FURRY":
                     if (!isPublic) {
@@ -104,8 +127,11 @@ public class CoreCommands {
                     } else {
                         discord.sendDebug("[" + sender + "] [F] " + argsS + "...");
                     }
-                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gpt2furry"}, isPublic));
+                    Query qq3 = new Query(Type.CHAT, sender, new String[]{argsS, "true", "gpt2furry"}, isPublic);
+                    wt.add(qq3);
+                    lastQueries.put(isPublic ? "*" : sender, qq3);
                     return new CommandResult(ResultType.SUCCESS, command);
+                case "STORY":
                 case "S":
                     if (!isPublic) {
                         if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot:" + ChatColor.RESET + " [S] " + argsS + "...");
@@ -113,15 +139,26 @@ public class CoreCommands {
                     } else {
                         discord.sendDebug("[" + sender + "] [S] " + argsS + "...");
                     }
-                    wt.add(new Query(Type.CHAT, sender, new String[]{argsS, "true", "gptneo"}, isPublic));
+                    Query qq4 = new Query(Type.CHAT, sender, new String[]{argsS, "true", "gptneo"}, isPublic);
+                    wt.add(qq4);
+                    lastQueries.put(isPublic ? "*" : sender, qq4);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "HISTORY":
+                case "HIST":
+                    wt.printHist(sender, isPublic);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "CLEARHISTORY":
+                case "CLEARHIST":
+                case "CH":
                     wt.clearHist(sender, isPublic);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "UNDOHISTORY":
+                case "UNDOHIST":
+                case "UH":
                     wt.undoHist(sender, isPublic);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "COUNTDOWN":
+                case "CD":
                     if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1");
                     else if (args.length > 1) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
                     double time;
@@ -171,6 +208,30 @@ public class CoreCommands {
                     if (args.length > 0) formatted = format(command.toLowerCase(), argsS);
                     else formatted = format(command.toLowerCase(), sender);
                     IngoBot.sendMessageTo(formatted, discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "BONK":
+                    String formatted2;
+                    if (args.length > 0) formatted2 = argsS;
+                    else formatted2 = "IngoBot";
+                    if (formatted2.toLowerCase().equals("i") || formatted2.toLowerCase().endsWith(" i")) {
+                        IngoBot.sendMessageTo("* " + formatted2 + " get bonked", discord, isPublic, sender);
+                    } else if (formatted2.toLowerCase().equals("you") || formatted2.toLowerCase().endsWith(" you")) {
+                        IngoBot.sendMessageTo("* " + formatted2 + " get bonked", discord, isPublic, sender);
+                    }
+                    else IngoBot.sendMessageTo("* " + formatted2 + " gets bonked", discord, isPublic, sender);
+                    if (formatted2.toLowerCase().equals("ingobot")) {
+                        main.bonk();
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "BAN":
+                    String formatted3;
+                    if (args.length > 0) formatted3 = argsS;
+                    else formatted3 = "IngoBot";
+                    if (formatted3.toLowerCase().equals("i") || formatted3.toLowerCase().endsWith(" i")) {
+                        IngoBot.sendMessageTo("* " + formatted3 + " am banned", discord, isPublic, sender);
+                    } else if (formatted3.toLowerCase().equals("you") || formatted3.toLowerCase().endsWith(" you")) {
+                        IngoBot.sendMessageTo("* " + formatted3 + " are banned", discord, isPublic, sender);
+                    } else  IngoBot.sendMessageTo("* " + formatted3 + " is banned", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "EYES":
                     IngoBot.sendMessageTo(":eyes:", discord, isPublic, sender);

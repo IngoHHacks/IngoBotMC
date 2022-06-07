@@ -144,6 +144,8 @@ public class MainLoop implements Runnable {
                 }
             }
 
+            mainI.watchTick();
+
         } catch (Exception e) {
             // Failsafe to prevent infinite loops
             discord.sendDebug("ERROR IN MAIN LOOP: " + e.getMessage());

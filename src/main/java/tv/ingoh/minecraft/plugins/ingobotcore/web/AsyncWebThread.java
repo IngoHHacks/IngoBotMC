@@ -41,6 +41,7 @@ public class AsyncWebThread implements Runnable {
         CHAT,
         COLOR,
         IMAGE,
+        PRINTHISTORY,
         REMOVEHISTORY,
         USERINFO,
         WIKISEARCH;
@@ -83,9 +84,10 @@ public class AsyncWebThread implements Runnable {
                     case CHAT:
                         try {
                             String text = args[0];
+                            int limit = 900 - URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").length();
                             boolean finish = Boolean.parseBoolean(args[1]);
                             String model = args[2];
-                            if (model.equals("gpt2")) u = new URL(CHAT.replace("%0", URLEncoder.encode(ch.getHistory(isPublic, user) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
+                            if (model.equals("gpt2")) u = new URL(CHAT.replace("%0", ch.getHistory(isPublic, user, limit) + URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
                             else if (model.equals("gptneo") || model.equals("gpt2furry")) u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
                             else u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", "gpt2"));
                             String res;
@@ -93,10 +95,12 @@ public class AsyncWebThread implements Runnable {
                                 res = executeConverse(u, finish, ch, model, text);
                                 if (res.charAt(0) != '[') {
                                     if (finish) {
-                                        ch.append(res.replaceFirst(Pattern.quote(">>"), text), isPublic, user);
+                                        String a = text;
+                                        String b = res.replaceFirst(Pattern.quote(">>"), "");
+                                        ch.appendF(a, b, isPublic, user, model, finish, true);
                                     } else {
-                                        ch.append(text, isPublic, user);
-                                        ch.append(res, isPublic, user);
+                                        ch.append(text, isPublic, user, model, finish, true);
+                                        ch.append(res, isPublic, user, model, finish, false);
                                     }
 
                                 }
@@ -121,18 +125,25 @@ public class AsyncWebThread implements Runnable {
                         break;
                     case REMOVEHISTORY:
                         int count = Integer.MAX_VALUE;
-                        if (args.length > 0) {
-                            count = Integer.parseInt(args[0]);
+                        boolean feedback = Boolean.parseBoolean(args[0]);
+                        if (args.length > 1) {
+                            count = Integer.parseInt(args[1]);
                         }
                         String last = ch.getLast(user, isPublic);
                         int removed = ch.remove(user, isPublic, count);
-                        if (removed == 1) {
-                            IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed entry " + ChatColor.YELLOW + "'" + last + "'" + ChatColor.GOLD  +" from history.", discord, isPublic, q.user);
-                        } else if (removed == 0) {
-                            IngoBot.sendMessageToRaw(ChatColor.RED + "History is already empty, idiot.", discord, isPublic, q.user);
-                        }else {
-                            IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed " + removed + " entries from history.", discord, isPublic, q.user);
+                        if (feedback) {
+                            if (removed == 1) {
+                                IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed entry " + ChatColor.YELLOW + "'" + last + "'" + ChatColor.GOLD  +" from history.", discord, isPublic, q.user);
+                            } else if (removed == 0) {
+                                IngoBot.sendMessageToRaw(ChatColor.RED + "History is already empty, idiot.", discord, isPublic, q.user);
+                            }else {
+                                IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed " + removed + " entries from history.", discord, isPublic, q.user);
+                            }
                         }
+                        break;
+                    case PRINTHISTORY:
+                        String print = ChatColor.GOLD + "[HISTORY]\n" + ch.getFormattedHistory(user, isPublic);
+                        IngoBot.sendMessageToRaw(print, discord, isPublic, q.user);
                         break;
                     case USERINFO:
                         String s;

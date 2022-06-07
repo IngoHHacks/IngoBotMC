@@ -23,10 +23,24 @@ public class WebThread {
     }
 
     public void undoHist(String user, boolean isPublic) {
-        a.add(new Query(Type.REMOVEHISTORY, user, new String[]{"1"}, isPublic));
+        a.add(new Query(Type.REMOVEHISTORY, user, new String[]{"true", "1"}, isPublic));
     }
 
     public void clearHist(String user, boolean isPublic) {
-        a.add(new Query(Type.REMOVEHISTORY, user, new String[]{}, isPublic));
+        a.add(new Query(Type.REMOVEHISTORY, user, new String[]{"true"}, isPublic));
+    }
+
+    public void undo(Query qr) {
+        if (qr.args[2].equals("gpt2")) {
+            if (qr.args[1].equals("true")) {
+                a.add(new Query(Type.REMOVEHISTORY, qr.user, new String[]{"false", "1"}, qr.isPublic));
+            } else {
+                a.add(new Query(Type.REMOVEHISTORY, qr.user, new String[]{"false", "2"}, qr.isPublic));
+            }
+        }
+    }
+
+    public void printHist(String user, boolean isPublic) {
+        a.add(new Query(Type.PRINTHISTORY, user, new String[]{}, isPublic));
     }
 }
