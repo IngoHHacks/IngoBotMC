@@ -31,7 +31,7 @@ public class HistoryEntry {
     }
 
     public String formattedString() {
-        return isFinish ? (ChatColor.DARK_PURPLE + fsInput + ChatColor.LIGHT_PURPLE + fsOutput) : (isInput ? (ChatColor.DARK_PURPLE + string) : (ChatColor.LIGHT_PURPLE + string));
+        return isFinish ? (ChatColor.DARK_PURPLE + fsInput + ChatColor.LIGHT_PURPLE + fsOutput) : (isInput ? (ChatColor.DARK_PURPLE + string.substring(0, string.length()-1)) : (ChatColor.LIGHT_PURPLE + string.substring(0, string.length()-1)));
     }
 
 }

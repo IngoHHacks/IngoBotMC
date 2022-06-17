@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.function.Function;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bukkit.Bukkit;
@@ -24,7 +24,6 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-import net.minecraft.world.level.levelgen.structure.WorldGenStrongholdPieces.q;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBotTabCompleter;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;

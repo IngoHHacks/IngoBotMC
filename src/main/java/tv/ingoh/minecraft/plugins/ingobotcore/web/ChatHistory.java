@@ -25,8 +25,11 @@ public class ChatHistory {
                 if (entry.user.equals(user)) hist += entry.string.replace("\n", "\r\n");
             }
         }
+        if (hist.endsWith("\r\n")) {
+            hist = hist.substring(0, hist.length()-2);
+        }
         try {
-            hist = URLEncoder.encode(hist.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8");
+            hist = URLEncoder.encode(hist.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F");
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -34,7 +37,7 @@ public class ChatHistory {
             String str = hist.substring(hist.length() - limit, hist.length()).replaceAll("[^\\x00-\\x7F]", "");
             return str.endsWith("\n") ? str : (str.endsWith("\r") ? str + "\n" : str + "\r\n");
         }
-        return hist.replaceAll("[^\\x00-\\x7F]", "");
+        return hist.replaceAll("[^\\x00-\\x7F]", "").replace("%2F", "%252F");
     }
 
     public void removeLast() {
@@ -63,7 +66,7 @@ public class ChatHistory {
         int i = history.size() - 1;
         while (i >= 0) {
             if (history.get(i).user == (isPublic ? "*" : user)) {
-                return history.get(i).string;
+                return history.get(i).string.substring(0, history.get(i).string.length()-1);
             }
             i--;
         }

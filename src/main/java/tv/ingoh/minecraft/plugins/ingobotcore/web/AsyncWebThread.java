@@ -17,7 +17,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
@@ -47,7 +47,7 @@ public class AsyncWebThread implements Runnable {
         WIKISEARCH;
     }
 
-    final static String CHAT = "https://ingoh.net/capi/%1/%0";
+    final static String CHAT = "https://ingoh.net/capi/%1%/%0%";
 
     LinkedList<Query> queue = new LinkedList<>();
     DiscordInterface discord;
@@ -84,12 +84,12 @@ public class AsyncWebThread implements Runnable {
                     case CHAT:
                         try {
                             String text = args[0];
-                            int limit = 900 - URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").length();
+                            int limit = 900 - URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F").length();
                             boolean finish = Boolean.parseBoolean(args[1]);
                             String model = args[2];
-                            if (model.equals("gpt2")) u = new URL(CHAT.replace("%0", ch.getHistory(isPublic, user, limit) + URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
-                            else if (model.equals("gptneo") || model.equals("gpt2furry")) u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", model));
-                            else u = new URL(CHAT.replace("%0", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8")).replace("%1", "gpt2"));
+                            if (model.equals("gpt2")) u = new URL(CHAT.replace("%0%", ch.getHistory(isPublic, user, limit) + URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
+                            else if (model.equals("gptneo") || model.equals("gpt2furry")) u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
+                            else u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", "gpt2"));
                             String res;
                             if (model.equals("gpt2")) {
                                 res = executeConverse(u, finish, ch, model, text);

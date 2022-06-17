@@ -90,8 +90,8 @@ public class MainLoop implements Runnable {
             if (syncCommands.size() > 0) {
                 String contentRaw = syncCommands.getFirst();
                 if (contentRaw.length() > 1 && contentRaw.charAt(0) == '.' && contentRaw.charAt(1) != '.') {
-                    CommandListenerWrapper clw = mainI.ingobotNPC.cQ();
-                    mainI.nmsServer.aA().a(clw, "/" + contentRaw.substring(1));
+                    CommandListenerWrapper clw = mainI.ingobotNPC.cU();
+                    mainI.nmsServer.aC().a(clw, "/" + contentRaw.substring(1));
                 }
                 else Bukkit.broadcastMessage("[IngoBot] " + contentRaw);
                 syncCommands.removeFirst();

@@ -3,7 +3,7 @@ package tv.ingoh.minecraft.plugins.ingobotcore;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
@@ -24,8 +24,8 @@ public class IngoBotTabCompleter implements TabCompleter {
         "f",
         "fs",
         "furry",
-        "how",
         "history",
+        "how",
         "image",
         "italic",
         "obfuscated",

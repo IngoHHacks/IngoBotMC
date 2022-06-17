@@ -2,6 +2,12 @@ package tv.ingoh.minecraft.plugins.ingobotcore.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Scanner;
 
 import org.junit.jupiter.api.Test;
