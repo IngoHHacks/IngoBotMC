@@ -1,5 +1,7 @@
 package tv.ingoh.minecraft.plugins.ingobotcore;
 
+import java.net.InetAddress;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Config {
@@ -17,6 +19,8 @@ public class Config {
     String dbName;
     String dbPwd;
     String dbConnection;
+    String fakeHost;
+    int fakePort;
 
     public Config(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -37,6 +41,8 @@ public class Config {
         plugin.getConfig().set("db-username", dbName);
         plugin.getConfig().set("db-password", dbPwd);
         plugin.getConfig().set("db-connection", dbConnection);
+        plugin.getConfig().set("fake-connection-host", fakeHost);
+        plugin.getConfig().set("fake-connection-port", fakePort);
         plugin.saveConfig();
 	}
 
@@ -53,6 +59,8 @@ public class Config {
         dbName = (String) plugin.getConfig().get("db-username");
         dbPwd = (String) plugin.getConfig().get("db-password");
         dbConnection = (String) plugin.getConfig().get("db-connection");
+        fakeHost = (String) plugin.getConfig().get("fake-connection-host");
+        fakePort = (int) plugin.getConfig().get("fake-connection-port");
 	}
 
     public JavaPlugin getPlugin() {
@@ -105,6 +113,14 @@ public class Config {
 
     public String getSpreadsheet() {
         return spreadsheet;
+    }
+
+    public String getFakeConnectionHost() {
+        return fakeHost;
+    }
+
+    public int getFakeConnectionPort() {
+        return fakePort;
     }
 
     public void setEnabled(boolean enabled) {
@@ -162,4 +178,11 @@ public class Config {
         save();
     }
 
+    public void setFakeConnectionHost(String fakeHost) {
+        this.fakeHost = fakeHost;
+    }
+
+    public void setFakeConnectionPort(int fakePort) {
+        this.fakePort = fakePort;
+    }
 }

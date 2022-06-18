@@ -10,3 +10,5 @@ spreadsheet: LINK
 db-username: USERNAME
 db-password: PASSWORD
 db-connection: localhost:27017
+fake-connection-host: localhost
+fake-connection-port: 25565

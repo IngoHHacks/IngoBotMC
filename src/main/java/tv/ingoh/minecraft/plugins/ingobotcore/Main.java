@@ -169,7 +169,7 @@ public class Main extends JavaPlugin implements Listener {
         }
 
         try {
-            InetSocketAddress address = new InetSocketAddress(Bukkit.getIp(), Bukkit.getPort());
+            InetSocketAddress address = new InetSocketAddress(config.getFakeConnectionHost(), config.getFakeConnectionPort());
 
             NetworkManager conn = NetworkManager.a(address, true);
 
