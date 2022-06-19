@@ -28,14 +28,9 @@ public class ChatHistory {
         if (hist.endsWith("\r\n")) {
             hist = hist.substring(0, hist.length()-2);
         }
-        try {
-            hist = URLEncoder.encode(hist.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
         if (hist.length() >= limit) {
             String str = hist.substring(hist.length() - limit, hist.length()).replaceAll("[^\\x00-\\x7F]", "");
-            return str.endsWith("\n") ? str : (str.endsWith("\r") ? str + "\n" : str + "\r\n");
+            return str.startsWith("\n") ? "\r" + str : str;
         }
         return hist.replaceAll("[^\\x00-\\x7F]", "").replace("%2F", "%252F");
     }

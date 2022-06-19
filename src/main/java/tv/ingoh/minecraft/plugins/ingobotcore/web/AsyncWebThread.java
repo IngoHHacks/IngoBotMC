@@ -79,7 +79,7 @@ public class AsyncWebThread implements Runnable {
                 String user = q.user;
                 boolean isPublic = q.isPublic;
                 String[] args = q.args;
-                URL u;
+                URL u = null;
                 switch (q.type) {
                     case CHAT:
                         try {
@@ -87,9 +87,12 @@ public class AsyncWebThread implements Runnable {
                             int limit = 900 - URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F").length();
                             boolean finish = Boolean.parseBoolean(args[1]);
                             String model = args[2];
-                            if (model.equals("gpt2")) u = new URL(CHAT.replace("%0%", ch.getHistory(isPublic, user, limit) + URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
-                            else if (model.equals("gptneo") || model.equals("gpt2furry")) u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
-                            else u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", "gpt2"));
+                            while (u == null || u.toString().length() > 1000) {
+                                if (model.equals("gpt2")) u = new URL(CHAT.replace("%0%", URLEncoder.encode(ch.getHistory(isPublic, user, limit) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
+                                else if (model.equals("gptneo") || model.equals("gpt2furry")) u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
+                                else u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", "gpt2"));
+                                limit -= 50;
+                            }
                             String res;
                             if (model.equals("gpt2")) {
                                 res = executeConverse(u, finish, ch, model, text);
