@@ -8,8 +8,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 import javax.security.auth.login.LoginException;
 
@@ -20,13 +22,16 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -34,18 +39,24 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.UpdateResult;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import net.minecraft.core.BlockPosition;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
 import net.minecraft.network.protocol.game.PacketPlayOutEntity.PacketPlayOutEntityLook;
@@ -60,6 +71,10 @@ import net.minecraft.server.level.WorldServer;
 import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.util.Tuple;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureType;
 import tv.ingoh.minecraft.plugins.ingobotcore.chat.ChatThread;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.ChatMessage;
 import tv.ingoh.minecraft.plugins.ingobotcore.command.CommandResult;
@@ -201,6 +216,8 @@ public class Main extends JavaPlugin implements Listener {
             Arrays.stream(e.getStackTrace()).forEach(x -> Bukkit.getLogger().severe("[IngoBotCore] DEBUG: Exception: " + x.toString()));
         }
         
+        
+
     }
 
     @Override
@@ -507,5 +524,160 @@ public class Main extends JavaPlugin implements Listener {
         }
         double pitch = -Math.asin(dy/r)/Math.PI*180;
         return new Tuple<Double,Double>(yaw, pitch);
+    }
+
+    public void addSWC(String sender, boolean isPublic, String user, int amount, boolean addToTotal) {
+
+        Document q = new Document().append("_username", user);
+        Function<FindIterable<Document>, String> postpost = new Function<FindIterable<Document>,String>() {
+            @Override
+            public String apply(FindIterable<Document> doc) {
+                Document docf = doc.first();
+                if (docf != null) {
+                    int swc = (Integer) docf.get("_SWC");
+                    Object ts = docf.get("_Total_SWC");
+                    if (ts != null) {
+                        int tswc = (Integer) ts;
+                        IngoBot.sendMessageTo(ChatColor.BLUE + "They now have " + swc  + " SWC (" + tswc + " total).", discord, isPublic, sender);
+                    } else {
+                        IngoBot.sendMessageTo(ChatColor.BLUE + "They now have " + swc  + " SWC.", discord, isPublic, sender);
+                    }
+                }
+                return "";
+            }
+        };
+        Function<UpdateResult, String> post = new Function<UpdateResult,String>() {
+            @Override
+            public String apply(UpdateResult t) {
+                if (t.wasAcknowledged() && t.getModifiedCount() >= 1) {
+                    if (amount >= 0) IngoBot.sendMessageTo(ChatColor.BLUE + "Added " + amount + " SWC to " + user, discord, isPublic, sender);
+                    else IngoBot.sendMessageTo(ChatColor.BLUE + "Removed " + -amount + " SWC from " + user, discord, isPublic, sender);
+                    mongo.find("players", q, postpost);
+                } else {
+                    IngoBot.sendMessageTo(ChatColor.RED + "Something went wrong updating this player's SWC", discord, isPublic, sender);
+                }
+                return "";
+            }
+        };   
+        Function<FindIterable<Document>, String> first = new Function<FindIterable<Document>,String>() {
+            @Override
+            public String apply(FindIterable<Document> doc) {
+                if (doc.first() != null) {
+                    if (addToTotal) {
+                        Bson u = Updates.combine(Updates.inc("_SWC", amount), Updates.inc("_Total_SWC", amount));
+                        mongo.update("players", q, u, false, post);
+                    } else {
+                        Bson u = Updates.combine(Updates.inc("_SWC", amount));
+                        mongo.update("players", q, u, false, post);
+                    }
+                } else {
+                    IngoBot.sendMessageTo(ChatColor.RED + "This player does not exist in the database, idiot.", discord, isPublic, sender);
+                }
+                return "";
+            }
+        };
+        mongo.find("players", q, first);
+    }
+
+    public void getSWC(String sender, boolean isPublic, String user, boolean b) {
+        Document q = new Document().append("_username", user);
+        Function<FindIterable<Document>, String> first = new Function<FindIterable<Document>,String>() {
+            @Override
+            public String apply(FindIterable<Document> doc) {
+                Document docf = doc.first();
+                if (docf != null) {
+                    Object rs = docf.get("_SWC");
+                    int swc = (rs == null ? 0 : (Integer) rs);
+                    Object ts = docf.get("_Total_SWC");
+                    int tswc = (ts == null ? 0 : (Integer) ts);
+                    if (tswc != 0) {
+                        if (sender.equals(user)) IngoBot.sendMessageTo(ChatColor.BLUE + "You have " + swc  + " SWC (" + tswc + " total).", discord, isPublic, sender);
+                        else IngoBot.sendMessageTo(ChatColor.BLUE + user + " has " + swc  + " SWC (" + tswc + " total).", discord, isPublic, sender);
+                    } else {
+                        if (sender.equals(user)) IngoBot.sendMessageTo(ChatColor.BLUE + "You have " + swc  + " SWC.", discord, isPublic, sender);
+                        else IngoBot.sendMessageTo(ChatColor.BLUE + user + " has " + swc  + " SWC.", discord, isPublic, sender);
+                    }
+                } else {
+                    IngoBot.sendMessageTo(ChatColor.RED + "This player does not exist in the database, idiot.", discord, isPublic, sender);
+                }
+                return "";
+            }
+        };
+        mongo.find("players", q, first);
+    }
+
+    public void claimMilestones(boolean isPublic, Player senderP) {
+        String user = senderP.getName();
+        int empty = getEmptySlotCount(senderP.getInventory());
+        Document q = new Document().append("_username", user);
+        List<ItemReward> rewards = new LinkedList<>();
+        List<Bson> updates = new LinkedList<>();
+        Function<UpdateResult, String> post = new Function<UpdateResult,String>() {
+            @Override
+            public String apply(UpdateResult t) {
+                if (t.wasAcknowledged() && t.getModifiedCount() >= 1) {
+                    for (ItemReward reward : rewards) {
+                        senderP.getInventory().addItem(reward.getReward());
+                    }
+                    IngoBot.sendMessageTo("Claimed " + rewards.size() + " reward(s).", discord, isPublic, user);
+                } else {
+                    IngoBot.sendMessageTo(ChatColor.RED + "Something went wrong claiming your reward(s)...", discord, isPublic, user);
+                }
+                return "";
+            }
+        };   
+        Function<FindIterable<Document>, String> first = new Function<FindIterable<Document>,String>() {
+            @Override
+            public String apply(FindIterable<Document> doc) {
+                Document docf = doc.first();
+                if (docf != null) {
+                    Object ts = docf.get("_Total_SWC");
+                    int tswc = (ts == null ? 0 : (Integer) ts);
+                    if (tswc >= 50) {
+                        Object ms3 = docf.get("_milestone1_claimed");
+                        if (ms3 == null) {
+                            updates.add(Updates.set("_milestone1_claimed", true));
+                            rewards.add(ItemReward.from(ItemReward.Reward.MILESTONE1));
+                        }
+                        if (tswc >= 300) {
+                            Object ms2 = docf.get("_milestone2_claimed");
+                            if (ms2 == null) {
+                                updates.add(Updates.set("_milestone2_claimed", true));
+                                rewards.add(ItemReward.from(ItemReward.Reward.MILESTONE2));
+                            }
+                            if (tswc >= 1500) {
+                                Object ms = docf.get("_milestone3_claimed");
+                                if (ms == null) {
+                                    updates.add(Updates.set("_milestone3_claimed", true));
+                                    rewards.add(ItemReward.from(ItemReward.Reward.MILESTONE3));
+                                }
+                            }
+                        }
+                    }
+                    if (rewards.size() > 0) {
+                        if (rewards.size() <= empty) {
+                            Bson u = Updates.combine(updates);
+                            mongo.update("players", q, u, false, post);
+                        } else {
+                            IngoBot.sendMessageTo(ChatColor.RED + "Your inventory is full, idiot. You need at least " + rewards.size() + " empty slot(s), idiot.", discord, isPublic, user);
+                        }
+                    } else {
+                        IngoBot.sendMessageTo("You have no rewards to claim, idiot.", discord, isPublic, user);
+                    }
+                } else {
+                    IngoBot.sendMessageTo(ChatColor.RED + "This player does not exist in the database, idiot.", discord, isPublic, user);
+                }
+                return "";
+            }
+        };
+        mongo.find("players", q, first);
+    }
+
+    public int getEmptySlotCount(Inventory inventory) {
+        int ct = 0;
+            for (org.bukkit.inventory.ItemStack stack : inventory.getStorageContents()) {
+                if (stack == null) ct++;
+            }
+        return ct;
     }
 }

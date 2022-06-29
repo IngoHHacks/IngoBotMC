@@ -1,7 +1,5 @@
 package tv.ingoh.minecraft.plugins.ingobotcore;
 
-import java.net.InetAddress;
-
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Config {

@@ -1,17 +1,35 @@
 package tv.ingoh.minecraft.plugins.ingobotcore.command;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.function.Function;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.Statistic;
+import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R1.map.CraftMapRenderer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.MapMeta;
+import org.bukkit.map.MapRenderer;
+import org.bukkit.map.MapView;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
@@ -20,10 +38,13 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
 
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
+import net.minecraft.world.level.saveddata.maps.WorldMap;
+import net.minecraft.world.level.material.MaterialMapColor;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBotTabCompleter;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
@@ -419,6 +440,295 @@ public class CoreCommands {
                 case "TAGLINE":
                     String secret = RandomTaglines.getRandomTagline();
                     IngoBot.sendMessageTo(secret, discord, isPublic, sender);
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "PRINTMAP":
+                    if (senderP != null) {
+                        ItemStack stack = senderP.getInventory().getItemInMainHand();
+                        if (stack.getType() != null && stack.getType() == Material.FILLED_MAP) {
+                            MapMeta mm = (MapMeta) stack.getItemMeta();
+                            MapRenderer renderer = mm.getMapView().getRenderers().get(0);
+                            Field f1 = CraftMapRenderer.class.getDeclaredField("worldMap");
+                            f1.setAccessible(true);
+                            WorldMap worldMap = (WorldMap) f1.get(renderer);
+                            Field f2 = worldMap.getClass().getDeclaredField("g");
+                            f2.setAccessible(true);
+                            byte[] materials = (byte[]) f2.get(worldMap); // colors
+                            byte[] colors = new byte[materials.length*3];
+
+                            int sz = (int) Math.sqrt(materials.length);
+
+                            BufferedImage img = new BufferedImage(sz, sz, BufferedImage.TYPE_INT_RGB);
+                            int i = 0;
+                            for(int r=0; r<sz; r++)
+                            {
+                                for(int c=0; c<sz; c++)
+                                {
+                                    int index=r*sz+c;
+                                    int dec = MaterialMapColor.b(materials[i]);
+                                    int red = dec & 0xff;
+                                    int green = (dec >> 8) & 0xff;
+                                    int blue = (dec >> 16) & 0xff;
+                                    Color col = new Color(red, green, blue);
+                                    img.setRGB(c, r, col.getRGB());
+                                    i++;
+                                }
+                            }
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            ImageIO.write(img, "png", baos);
+                            byte[] imgArr = baos.toByteArray();
+                            String b64 = Base64.getEncoder().encodeToString(imgArr);
+                            TextComponent comp = new TextComponent("[CLICK HERE TO COPY IMAGE]");
+                            comp.setColor(net.md_5.bungee.api.ChatColor.AQUA);
+                            comp.setClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, "data:image/png;base64," + b64));
+                            senderP.spigot().sendMessage(comp);
+                        } else {
+                            IngoBot.sendMessageTo("You are not holding a map, idiot.", discord, isPublic, sender);
+                        }
+                    } else {
+                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "PRINTALLMAPS":
+                    if (senderP == null) {
+                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                        return new CommandResult(ResultType.SUCCESS, command);
+                    }
+                    if (senderP.isOp()) {
+                        int i2 = 0;
+                        while (true) {
+                            WorldMap map = (WorldMap) ((CraftServer) Bukkit.getServer()).getServer().C().t().a(WorldMap::b, "map_" + i2);
+                            if (map == null) {
+                                break;
+                            }
+                            try {
+                                Field f3 = map.getClass().getDeclaredField("g");
+                                f3.setAccessible(true);
+                                byte[] materials = (byte[]) f3.get(map); // colors
+                                byte[] colors = new byte[materials.length*3];
+
+                                int sz = (int) Math.sqrt(materials.length);
+
+                                BufferedImage img = new BufferedImage(sz, sz, BufferedImage.TYPE_INT_RGB);
+                                int i3 = 0;
+                                for(int r=0; r<sz; r++)
+                                {
+                                    for(int c=0; c<sz; c++)
+                                    {
+                                        int index=r*sz+c;
+                                        int dec = MaterialMapColor.b(materials[i3]);
+                                        int red = dec & 0xff;
+                                        int green = (dec >> 8) & 0xff;
+                                        int blue = (dec >> 16) & 0xff;
+                                        Color col = new Color(red, green, blue);
+                                        img.setRGB(c, r, col.getRGB());
+                                        i3++;
+                                    }
+                                }
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                ImageIO.write(img, "png", baos);
+                                byte[] imgArr = baos.toByteArray();
+                                String b64 = Base64.getEncoder().encodeToString(imgArr);
+                                Document q = new Document().append("_id", i2);
+                                Bson u = Updates.combine(Updates.set("base64", b64), Updates.set("x", map.c), Updates.set("z", map.d), Updates.set("dimension", map.e.a().a()), Updates.set("scale", map.f), Updates.set("locked", map.h));
+                                main.getMongo().update("maps", q, u, false);
+                            } catch (Exception ignore) {}
+                            i2++;
+                        }
+                    } else {
+                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "STATISTIC":
+                    if (senderP == null) {
+                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                        return new CommandResult(ResultType.SUCCESS, command);
+                    }
+                    if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1*");
+                    else {
+                        String[] split = argsS.split(" ",2);
+                        String type = split[0].toLowerCase();
+                        String argsS2 = split.length > 1 ? split[1] : "";
+                        switch (type) {
+                            case "kill", "kills", "killed" -> {
+                                String entity = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    EntityType entType = EntityType.valueOf(entity);
+                                    int value = senderP.getStatistic(Statistic.KILL_ENTITY, entType);
+                                    IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + entity.replace("_", " ") + ChatColor.RESET + " kills.", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            case "mine", "mined" -> {
+                                String item = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    Material mat = Material.valueOf(item);
+                                    int value = senderP.getStatistic(Statistic.MINE_BLOCK, mat);
+                                    IngoBot.sendMessageTo(sender + " has mined " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            case "break", "broken" -> {
+                                String item = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    Material mat = Material.valueOf(item);
+                                    int value = senderP.getStatistic(Statistic.BREAK_ITEM, mat);
+                                    IngoBot.sendMessageTo(sender + " has broken " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            case "craft", "crafted" -> {
+                                String item = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    Material mat = Material.valueOf(item);
+                                    int value = senderP.getStatistic(Statistic.CRAFT_ITEM, mat);
+                                    IngoBot.sendMessageTo(sender + " has crafted " + ChatColor.AQUA + value + " " + item.replace("_", " ")+ ChatColor.RESET + ".", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            case "use", "used", "uses" -> {
+                                String item = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    Material mat = Material.valueOf(item);
+                                    int value = senderP.getStatistic(Statistic.USE_ITEM, mat);
+                                    IngoBot.sendMessageTo(sender + " has used " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            case "pickup", "pick_up" -> {
+                                String item = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    Material mat = Material.valueOf(item);
+                                    int value = senderP.getStatistic(Statistic.PICKUP, mat);
+                                    IngoBot.sendMessageTo(sender + " has picked up " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            case "drop", "dropped" -> {
+                                String item = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    Material mat = Material.valueOf(item);
+                                    int value = senderP.getStatistic(Statistic.DROP, mat);
+                                    IngoBot.sendMessageTo(sender + " has dropped " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            default -> {
+                                String statistic = argsS.replace(" ", "_").toUpperCase();
+                                try {
+                                    Statistic stat = Statistic.valueOf(statistic);
+                                    int value = senderP.getStatistic(stat);
+                                    IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + statistic.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(statistic + " is not a valid statistic, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                                                        
+                        }
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+                case "SWC":
+                    if (senderP == null) {
+                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                        return new CommandResult(ResultType.SUCCESS, command);
+                    }
+                    if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1+");
+                    switch (args[0].toLowerCase()) {
+                        case "claim":
+                        if (args.length < 2) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "2");
+                        if (args.length > 2) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "2");
+                        if (args[1].toLowerCase().equals("milestones")) {
+                            main.claimMilestones(isPublic, senderP);
+                        } else {
+                            IngoBot.sendMessageTo(args[1] + " is not a valid reward, idiot.", discord, isPublic, sender);
+                        }
+                            break;
+                        case "get":
+                            String userg = sender;
+                            if (args.length == 2) {
+                                if (senderP.isOp()) userg = args[1];
+                            }
+                            main.getSWC(sender, isPublic, userg, true);
+                            break;
+                        case "rewards":
+                        /*
+                            IngoBot.sendMessageTo(ChatColor.BLUE + "<spawn> [20] SWC: Teleport to world spawn.\n" +
+                                                  ChatColor.BLUE + "<*manual> [50] SWC: Pick any unusual dragon head.\n" +
+                                                  ChatColor.BLUE + "<*manual> [50-100] SWC: Pick any unusual helmet (100 diamond | 80 turtle | 50 other).\n" +
+                                                  ChatColor.BLUE + "<*manual> [50-100] SWC: Pick any unusual elytra (100 effect AND song | 50 effect OR song).\n" +
+                                                  ChatColor.BLUE + "<*manual> [500] SWC: Choose 5 physical stickers from Community Commissions (IRL).\n" +
+                                                  ChatColor.BLUE + "<chicken> [500] SWC: Summon a random Legendary Resource Chicken at your current location.\n" +
+                                                  ChatColor.BLUE + "<*manual> [500] SWC: Create any non-beneficial, non-destuctive IngoBot command.\n" +
+                                                  ChatColor.BLUE + "- Regular SWC rewards can be claimed with " + ChatColor.LIGHT_PURPLE + "swc claim <name>, or by asking IngoH for <*manual> rewards.", discord, isPublic, sender);
+                        */
+                            IngoBot.sendMessageToRaw(ChatColor.BLUE + "Regular SWC rewards will be added soon.", discord, isPublic, sender);
+                            IngoBot.sendMessageToRaw(ChatColor.DARK_PURPLE + "[50] Total SWC: Wiki Contributor Feather.\n" +
+                                                  ChatColor.DARK_PURPLE + "[300] Total SWC: Super Contributor Feather.\n" +
+                                                  ChatColor.DARK_PURPLE + "[1500] Total SWC: Ultimate Contributor Feather.\n" +
+                                                  ChatColor.DARK_PURPLE + "- Total SWC rewards can be claimed with " + ChatColor.LIGHT_PURPLE + "swc claim milestones.", discord, isPublic, sender);
+                            break;
+                        case "add":
+                            if (senderP.isOp()) {
+                                if (args.length < 3) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                if (args.length > 3) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                String user = args[1];
+                                try {
+                                    int amount = Integer.parseInt(args[2]);
+                                    main.addSWC(sender, isPublic, user, amount, true);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                }
+                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            break;
+                        case "remove":
+                            if (senderP.isOp()) {
+                                if (args.length < 3) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                if (args.length > 3) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                String user = args[1];
+                                try {
+                                    int amount = Integer.parseInt(args[2]);
+                                    main.addSWC(sender, isPublic, user, -amount, true);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                }
+                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            break;
+                        case "softadd":
+                            if (senderP.isOp()) {
+                                if (args.length < 3) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                if (args.length > 3) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                String user = args[1];
+                                try {
+                                    int amount = Integer.parseInt(args[2]);
+                                    main.addSWC(sender, isPublic, user, amount, false);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                }
+                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            break;
+                        case "softremove":
+                            if (senderP.isOp()) {
+                                if (args.length < 3) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                if (args.length > 3) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "3");
+                                String user = args[1];
+                                try {
+                                    int amount = Integer.parseInt(args[2]);
+                                    main.addSWC(sender, isPublic, user, -amount, false);
+                                } catch (Exception e) {
+                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                }
+                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            break;
+                        default: 
+                            if (!senderP.isOp()) IngoBot.sendMessageTo("Unknown argument idiot: " + args[0] + ". Valid arguments: [claim, get, rewards]", discord, isPublic, sender);
+                            else IngoBot.sendMessageTo("Unknown argument, idiot: " + args[0] + ". Valid arguments: [claim, get, rewards, add, remove, softadd, softremove]", discord, isPublic, sender);
+                    }
                     return new CommandResult(ResultType.SUCCESS, command);
                 default:
                     boolean foundColor = tryFormatColor(command, argsS, discord, isPublic, sender);

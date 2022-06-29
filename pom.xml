@@ -5,7 +5,7 @@
 
   <groupId>tv.ingoh</groupId>
   <artifactId>IngoBotCore</artifactId>
-  <version>1.1.1</version>
+  <version>1.2.1</version>
 
   <name>ingoh-ingobotcore-plugin</name>
   <url>ingoh.net</url>
@@ -68,6 +68,13 @@
       <version>3.3.39</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/../spigot/authlib-3.3.39.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>it.unimi</groupId>
+      <artifactId>dsi.fastutil</artifactId>
+      <version>8.5.6</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../spigot/fastutil-8.5.6.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>

@@ -1,5 +1,6 @@
 package tv.ingoh.minecraft.plugins.ingobotcore;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -30,10 +31,13 @@ public class IngoBotTabCompleter implements TabCompleter {
         "italic",
         "obfuscated",
         "ping",
+        "printmap",
         "retry",
         "rng",
         "rq",
         "s",
+        "statistic",
+        "swc",
         "strikethrough",
         "underlined",
         "undohistory",
@@ -47,15 +51,32 @@ public class IngoBotTabCompleter implements TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (command.getLabel().equals("i")) {
             if (args.length == 1) {
-                return finishCommand(args[0]);
+                return finishCommand(args[0], sender);
             } else {
-                return finishArgs(args);
+                return finishArgs(args, sender);
             }
         }
         return null;
     }
 
-    private List<String> finishArgs(String[] args) {
+    public final static String[] SWC_NORMAL = {
+        "claim",
+        "get",
+        "rewards"
+    };
+
+    public final static String[] SWC_OP = {
+        "add",
+        "remove",
+        "softadd",
+        "softremove"
+    };
+
+    public final static String[] SWC_CLAIM = {
+        "milestones"
+    };
+
+    private List<String> finishArgs(String[] args, CommandSender sender) {
         LinkedList<String> possible = new LinkedList<>();
         switch (args[0]) {
             case "calc":
@@ -65,15 +86,40 @@ public class IngoBotTabCompleter implements TabCompleter {
                 for (String val : COUNTDOWNVALUES) {
                     if (val.startsWith(args[1])) possible.add(val);
                 }
+                for (String val : COUNTDOWNVALUES) {
+                    if (val.contains(args[1]) && !possible.contains(val)) possible.add(val);
+                }
                 return possible;
             }
             else return null;
+            case "swc":
+            if (args.length == 2) {
+                LinkedList<String> allP = new LinkedList<>(Arrays.asList(SWC_NORMAL));
+                if (sender.isOp()) {
+                    allP.addAll(Arrays.asList(SWC_OP));
+                }
+                for (String val : allP) {
+                    if (val.startsWith(args[1])) possible.add(val);
+                }
+                for (String val : allP) {
+                    if (val.contains(args[1]) && !possible.contains(val)) possible.add(val);
+                }
+                return possible;
+            } else if (args.length == 3 && args[1].toLowerCase().equals("claim")) {
+                for (String val : SWC_CLAIM) {
+                    if (val.startsWith(args[2])) possible.add(val);
+                }
+                for (String val : SWC_CLAIM) {
+                    if (val.contains(args[2]) && !possible.contains(val)) possible.add(val);
+                }
+                return possible;
+            } else return null;
             default:
             return null;
         }
     }
 
-    private List<String> finishCommand(String string) {
+    private List<String> finishCommand(String string, CommandSender sender) {
         LinkedList<String> possible = new LinkedList<>();
         for (String cmd : COMMANDS) {
             if (cmd.startsWith(string)) {
