@@ -139,7 +139,7 @@ public class AsyncWebThread implements Runnable {
                                 IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed entry " + ChatColor.YELLOW + "'" + last + "'" + ChatColor.GOLD  +" from history.", discord, isPublic, q.user);
                             } else if (removed == 0) {
                                 IngoBot.sendMessageToRaw(ChatColor.RED + "History is already empty, idiot.", discord, isPublic, q.user);
-                            }else {
+                            } else {
                                 IngoBot.sendMessageToRaw(ChatColor.GOLD + "Removed " + removed + " entries from history.", discord, isPublic, q.user);
                             }
                         }
@@ -156,13 +156,10 @@ public class AsyncWebThread implements Runnable {
                             s = doUserinfoLookup(q.user);
                         }
                         String[] strs = s.split(",");
-                        if (strs.length >= 7) {
+                        if (strs.length >= 4) {
                             String out = ChatColor.GOLD + "Username: " + ChatColor.YELLOW + strs[2] + "\n"
                                        + ChatColor.GOLD + "Discord: " + ChatColor.YELLOW + strs[3] +  "\n"
                                        + ChatColor.GOLD + "Request submitted at: " + ChatColor.YELLOW + strs[0];
-                            if (q.args.length > 0 && q.args[0].equals(q.user) && !isPublic && !strs[6].equals("")) {
-                                out += "\n" + ChatColor.GOLD + "PWC: " + ChatColor.YELLOW + strs[6];
-                            }
                             IngoBot.sendMessageToRaw(out, discord, isPublic, q.user);
                         } else {
                             IngoBot.sendMessageToRaw(ChatColor.GOLD + "User not on whitelist spreadsheet.", discord, isPublic, q.user);

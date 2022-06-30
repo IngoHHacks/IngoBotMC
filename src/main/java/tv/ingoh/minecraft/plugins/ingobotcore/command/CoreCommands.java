@@ -29,7 +29,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapRenderer;
-import org.bukkit.map.MapView;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
