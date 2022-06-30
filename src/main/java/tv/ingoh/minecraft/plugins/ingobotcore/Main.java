@@ -402,7 +402,7 @@ public class Main extends JavaPlugin implements Listener {
         minecordBC.add(messageEvent);
     }
 
-    public boolean scheduleCountdown(Player senderP, double time) {
+    public boolean scheduleCountdown(Player senderP, double time, boolean uppies) {
 
         // Max 1 countdown per player, 5 total.
 
@@ -417,7 +417,7 @@ public class Main extends JavaPlugin implements Listener {
         }
 
         while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
-        countdowns.add(new Countdown(discord, senderP, time));
+        countdowns.add(new Countdown(discord, senderP, time, uppies));
 
         return true;
 

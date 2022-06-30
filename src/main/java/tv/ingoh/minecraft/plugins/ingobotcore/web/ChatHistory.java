@@ -1,7 +1,5 @@
 package tv.ingoh.minecraft.plugins.ingobotcore.web;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.LinkedList;
 
 import net.md_5.bungee.api.ChatColor;

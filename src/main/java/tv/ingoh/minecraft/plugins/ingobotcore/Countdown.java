@@ -10,13 +10,22 @@ public class Countdown {
     Player target;
     long endTime;
     int prevSecond;
+    boolean uppies;
+    long startTime;
+    double totalTime;
     DiscordInterface discord;
+    boolean started;
 
-    public Countdown(DiscordInterface discord, Player target, double time) {
+    public Countdown(DiscordInterface discord, Player target, double time, boolean uppies) {
         this.discord = discord;
         this.target = target;
+        this.startTime = System.currentTimeMillis();
+        this.uppies = uppies;
+        totalTime = time;
         endTime = System.currentTimeMillis() + (long)(time * 1000);
-        prevSecond = (int) Math.floor(time);
+        if (uppies) prevSecond = 0;
+        else prevSecond = (int) Math.floor(time);
+        started = false;
     }
 
     public void printSecond() {
@@ -35,10 +44,34 @@ public class Countdown {
             )
             IngoBot.sendMessage(ChatColor.GREEN + "[C] " + Integer.toString(prevSecond), discord);
         }
-        prevSecond--;
+        if (uppies) prevSecond++;
+        else prevSecond--;
     }
 
     public boolean isFinished() {
         return (System.currentTimeMillis() > endTime);
+    }
+
+    public void printTotalTime() {
+        if (target != null) {
+            if ((int)totalTime != totalTime ||
+            !(prevSecond <= 10 ||
+            (prevSecond <= 20 && (prevSecond % 5 == 0)) ||
+            (prevSecond <= 60 && (prevSecond % 10 == 0)) ||
+            (prevSecond <= 300 && (prevSecond % 30 == 0))
+        )) {
+                IngoBot.sendMessageTo(ChatColor.GREEN + "[C] " + Double.toString(totalTime), discord, false, target.getName());
+            }
+        } else {
+            if ((int)totalTime != totalTime ||
+            !(prevSecond <= 10 ||
+            (prevSecond <= 20 && (prevSecond % 5 == 0)) ||
+            (prevSecond <= 60 && (prevSecond % 10 == 0)) ||
+            (prevSecond <= 300 && (prevSecond % 30 == 0))
+        )) {
+                IngoBot.sendMessage(ChatColor.GREEN + "[C] " + Double.toString(totalTime), discord);
+            }
+        }
+       
     }
 }

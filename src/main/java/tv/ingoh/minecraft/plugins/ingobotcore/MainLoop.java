@@ -106,10 +106,24 @@ public class MainLoop implements Runnable {
             if (countdowns.size() > 0) {
                 LinkedList<Countdown> scheduleDeletion = new LinkedList<>();
                 for (int i = 0; i < countdowns.size(); i++) {
-                    long time = countdowns.get(i).endTime - System.currentTimeMillis();
-                    if (time/1000.0 < countdowns.get(i).prevSecond) {
-                        countdowns.get(i).printSecond();
-                        if (countdowns.get(i).isFinished()) scheduleDeletion.add(countdowns.get(i));
+                    if (countdowns.get(i).uppies) {
+                        long time = System.currentTimeMillis() - countdowns.get(i).startTime;
+                        if (countdowns.get(i).isFinished()) {
+                            countdowns.get(i).printTotalTime();
+                            scheduleDeletion.add(countdowns.get(i));
+                        } else if (time/1000.0 >= countdowns.get(i).prevSecond) {
+                            countdowns.get(i).printSecond();
+                        }
+                    } else {
+                        if (!countdowns.get(i).started) {
+                            countdowns.get(i).started = true;
+                            countdowns.get(i).printTotalTime();
+                        }
+                        long time = countdowns.get(i).endTime - System.currentTimeMillis();
+                        if (time/1000.0 < countdowns.get(i).prevSecond) {
+                            countdowns.get(i).printSecond();
+                            if (countdowns.get(i).isFinished()) scheduleDeletion.add(countdowns.get(i));
+                        }
                     }
                 }
                 for (Countdown countdown : scheduleDeletion) {

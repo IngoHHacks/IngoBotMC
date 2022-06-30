@@ -178,29 +178,36 @@ public class CoreCommands {
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "COUNTDOWN":
                 case "CD":
+                case "COUNTUP":
+                case "CU":
                     if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, "0", "1");
                     else if (args.length > 1) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "1");
                     double time;
+                    boolean uppies = false;
                     try {
-                        time = Double.parseDouble(args[0]);
+                        double d = Double.parseDouble(args[0]);
+                        if (d < 0) uppies = true;
+                        time = Math.abs(d);
                     } catch (NumberFormatException ex) {
                         return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Cannot convert " + args[0] + " to a number, idiot.");
                     }
+                    if (command.toUpperCase().equals("COUNTUP") || command.toUpperCase().equals("CU")) uppies = !uppies;
                     if (!isPublic) {
                         if (senderP != null) {
                             if (time > 300) {
                                 return new CommandResult(ResultType.VALUEOUTOFRANGEEXCEPTION, Double.toString(time), "duration", "<=300");
                             }
-                            boolean r = main.scheduleCountdown(senderP, time);
+                            boolean r = main.scheduleCountdown(senderP, time, uppies);
                             if (!r) return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Too many countdowns, idiot.");
-                            IngoBot.sendMessageTo(ChatColor.GREEN + "Starting countdown for " + time + " seconds, idiot.", discord, isPublic, sender);
+                            IngoBot.sendMessageTo(ChatColor.GREEN + "Starting count" + (uppies ? "up" : "down") + "for " + time + " seconds.", discord, isPublic, sender);
                         }
                     } else {
                         if (time > 60) {
                             return new CommandResult(ResultType.VALUEOUTOFRANGEEXCEPTION, Double.toString(time), "duration", "<=60");
                         }
-                        boolean r = main.scheduleCountdown(null, time);
+                        boolean r = main.scheduleCountdown(null, time, uppies);
                         if (!r) return new CommandResult(ResultType.EXECUTIONFAILUREEXCEPTION, "Too many countdowns, idiot.");
+                        IngoBot.sendMessageTo(ChatColor.GREEN + "Starting count" + (uppies ? "up" : "down") + " for " + time + " seconds.", discord, isPublic, sender);
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "USERINFO":
@@ -272,42 +279,56 @@ public class CoreCommands {
                     if (args.length >= 1) {
                         boolean list = false;
                         boolean ints = true;
-                        if (args.length > 2) {
-                            list = true;
-                        } else {
-                            for (String string : args) {
-                                if (!string.matches("-?\\d+(\\.\\d+)?")) list = true;
-                                if (string.contains(".")) ints = false;
+                        if (args.length == 1) {
+                            switch (args[0]) {
+                                case "coin", "coinflip" -> {
+                                    out = rng.nextInt(2) == 0 ? "HEADS" : "TAILS";
+                                }
+                            }
+                            if (args[0].startsWith("d") && args[0].substring(1).matches("-?\\d+(\\.\\d+)?")) {
+                                if (Integer.parseInt(args[0].substring(1)) == 0) out = "0";
+                                out = Integer.toString(1 + rng.nextInt(Math.abs(Integer.parseInt(args[0].substring(1)))));
                             }
                         }
-                        if (!list) {
-                            try {
-                                if (args.length == 2) {
-                                    if (ints) {
-                                        int min = Math.min(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
-                                        int max = Math.max(Integer.parseInt(args[0]), Integer.parseInt(args[1])) + 1;
-                                        out = Integer.toString(rng.nextInt(max - min) + min);
-                                    } else {
-                                        double min = Math.min(Double.parseDouble(args[0]), Double.parseDouble(args[1]));
-                                        double max = Math.max(Double.parseDouble(args[0]), Double.parseDouble(args[1]));
-                                        double pct = ((double)(rng.nextLong() / 2 + Long.MAX_VALUE / 2) / Long.MAX_VALUE);
-                                        out = Double.toString(pct * (max - min) + min);
-                                    }
-                                } else {
-                                    if (ints) {
-                                        out = Integer.toString(rng.nextInt(Integer.parseInt(args[0]) + 1));
-                                    } else {
-                                        double pct = ((double)(rng.nextLong() / 2 + Long.MAX_VALUE / 2) / Long.MAX_VALUE);
-                                        out = Double.toString(pct * Double.parseDouble(args[0]));
-                                    }
+                        if (out.equals("INVALID")) {
+                            if (args.length > 2) {
+                                list = true;
+                            } else {
+                                for (String string : args) {
+                                    if (!string.matches("-?\\d+(\\.\\d+)?")) list = true;
+                                    if (string.contains(".")) ints = false;
                                 }
-                            } catch (Exception e) {
+                            }
+                            if (!list) {
+                                try {
+                                    if (args.length == 2) {
+                                        if (ints) {
+                                            int min = Math.min(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+                                            int max = Math.max(Integer.parseInt(args[0]), Integer.parseInt(args[1])) + 1;
+                                            out = Integer.toString(rng.nextInt(max - min) + min);
+                                        } else {
+                                            double min = Math.min(Double.parseDouble(args[0]), Double.parseDouble(args[1]));
+                                            double max = Math.max(Double.parseDouble(args[0]), Double.parseDouble(args[1]));
+                                            double pct = ((double)(rng.nextLong() / 2 + Long.MAX_VALUE / 2) / Long.MAX_VALUE);
+                                            out = Double.toString(pct * (max - min) + min);
+                                        }
+                                    } else {
+                                        if (ints) {
+                                            int mul = (Integer.parseInt(args[0]) < 0) ? -1 : 1;
+                                            out = Integer.toString(rng.nextInt(Math.abs(Integer.parseInt(args[0])) + 1) * mul);
+                                        } else {
+                                            double pct = ((double)(rng.nextLong() / 2 + Long.MAX_VALUE / 2) / Long.MAX_VALUE);
+                                            out = Double.toString(pct * Double.parseDouble(args[0]));
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    int index = rng.nextInt(args.length);
+                                    out = args[index];
+                                }
+                            } else {
                                 int index = rng.nextInt(args.length);
                                 out = args[index];
                             }
-                        } else {
-                            int index = rng.nextInt(args.length);
-                            out = args[index];
                         }
                         IngoBot.sendMessageTo(ChatColor.AQUA + "RNG: " + out, discord, isPublic, sender);
                     } else {

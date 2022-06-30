@@ -2,11 +2,11 @@ package tv.ingoh.util;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Registry;
 
-import net.md_5.bungee.chat.TranslationRegistry;
+import net.minecraft.core.IRegistry;
 
 public class RandomThings {
 
@@ -16,21 +16,20 @@ public class RandomThings {
 
     public RandomThings() {
         Bukkit.getLogger().info("[IngoBotCore] Loading registries...");
-        Registry.MATERIAL.forEach(x -> add("item.minecraft." + x.getKey().getKey(), "item"));
-        Registry.SOUNDS.forEach(x -> add("subtitles." + x.getKey().getKey(), "sound"));
-        Registry.ENTITY_TYPE.forEach(x -> add("entity.minecraft." + x.getKey().getKey(), "entity"));
-        Registry.ATTRIBUTE.forEach(x -> add("attribute.name." + x.getKey().getKey(), "attribute"));
-        Registry.BIOME.forEach(x -> add("biome.minecraft." + x.getKey().getKey(), "biome"));
-        Registry.STATISTIC.forEach(x -> add("stat.minecraft." + x.getKey().getKey(), "statistic"));
-        Registry.ENCHANTMENT.forEach(x -> add("enchantment.minecraft." + x.getKey().getKey(), "enchantment"));
+        IRegistry<? extends IRegistry<?>> registries = IRegistry.d;
+        registries.forEach(registry -> {
+            Set<?> set = registry.e();
+            set.forEach(item -> add(item.toString()));
+        });
+        
         Bukkit.getLogger().info("[IngoBotCore] Registries loaded!");
     }
 
-    private void add(String str, String str2) {
-        String tr = TranslationRegistry.INSTANCE.translate(str);
-        if (!tr.equals(str)) {
-            keys.add(tr + " " + str2);
-        }
+    private void add(String str) {
+        String[] split = str.split(" / ");
+        String registry = split[0].substring(split[0].indexOf("[")+1).replace("minecraft:", "").replace("_", " ").replace(".", " ").replace("/", " ");
+        String key = split[1].substring(0, split[1].length()-1).replace("minecraft:", "").replace("_", " ").replace(".", " ").replace("/", " ");
+        keys.add(key.toUpperCase() + " " + registry.toLowerCase());
     }
 
     public static void initialize() {
