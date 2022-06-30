@@ -287,7 +287,7 @@ public class CoreCommands {
                             }
                             if (args[0].startsWith("d") && args[0].substring(1).matches("-?\\d+(\\.\\d+)?")) {
                                 if (Integer.parseInt(args[0].substring(1)) == 0) out = "0";
-                                out = Integer.toString(1 + rng.nextInt(Math.abs(Integer.parseInt(args[0].substring(1)))));
+                                else out = Integer.toString(1 + rng.nextInt(Math.abs(Integer.parseInt(args[0].substring(1)))));
                             }
                         }
                         if (out.equals("INVALID")) {
