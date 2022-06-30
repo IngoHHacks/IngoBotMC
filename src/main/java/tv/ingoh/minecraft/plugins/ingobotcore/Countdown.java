@@ -54,21 +54,21 @@ public class Countdown {
 
     public void printTotalTime() {
         if (target != null) {
-            if ((int)totalTime != totalTime ||
+            if (uppies || ((int)totalTime != totalTime ||
             !(prevSecond <= 10 ||
             (prevSecond <= 20 && (prevSecond % 5 == 0)) ||
             (prevSecond <= 60 && (prevSecond % 10 == 0)) ||
             (prevSecond <= 300 && (prevSecond % 30 == 0))
-        )) {
+        ))) {
                 IngoBot.sendMessageTo(ChatColor.GREEN + "[C] " + Double.toString(totalTime), discord, false, target.getName());
             }
         } else {
-            if ((int)totalTime != totalTime ||
+            if (uppies || ((int)totalTime != totalTime ||
             !(prevSecond <= 10 ||
             (prevSecond <= 20 && (prevSecond % 5 == 0)) ||
             (prevSecond <= 60 && (prevSecond % 10 == 0)) ||
             (prevSecond <= 300 && (prevSecond % 30 == 0))
-        )) {
+        ))) {
                 IngoBot.sendMessage(ChatColor.GREEN + "[C] " + Double.toString(totalTime), discord);
             }
         }
