@@ -376,7 +376,7 @@ public class AsyncWebThread implements Runnable {
                             if (row6 != null) s += row5.replace("<br>","\n");
                             if (tries == 2) {
                                 if (!Filter.isBanned(s)) {
-                                    if (row1.equals(">>") && !row1.equals(">> ")) {
+                                    if (!row1.equals(">>") && !row1.equals(">> ")) {
                                         out = s;
                                     }
                                     discord.sendDebug(msg + out);

@@ -510,7 +510,7 @@ public class CoreCommands {
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "PRINTALLMAPS":
                     if (senderP == null) {
-                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                         return new CommandResult(ResultType.SUCCESS, command);
                     }
                     if (senderP.isOp()) {
@@ -558,9 +558,12 @@ public class CoreCommands {
                         IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
+                case "STATISTICS":
                 case "STATISTIC":
+                case "STATS":
+                case "STAT":
                     if (senderP == null) {
-                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                         return new CommandResult(ResultType.SUCCESS, command);
                     }
                     if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1*");
@@ -655,7 +658,7 @@ public class CoreCommands {
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "SWC":
                     if (senderP == null) {
-                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                         return new CommandResult(ResultType.SUCCESS, command);
                     }
                     if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1+");
