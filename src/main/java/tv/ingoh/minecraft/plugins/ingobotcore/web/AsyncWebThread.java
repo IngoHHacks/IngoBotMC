@@ -111,7 +111,7 @@ public class AsyncWebThread implements Runnable {
                             else res = executeConverse(u, finish, model, text);
                             if (model.equals("random")) {
                                 if (res.charAt(0) != '[') {
-                                    res = res.replaceFirst(Pattern.quote(">>"), text);
+                                    if (res.startsWith(">>")) res = res.replaceFirst(Pattern.quote(">>"), text);
                                     IngoBot.sendMessagesFromAsync(main, res);
                                 }
                             } else {
