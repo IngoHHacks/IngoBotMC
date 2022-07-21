@@ -2,12 +2,9 @@ package tv.ingoh.minecraft.plugins.ingobotcore.command;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.function.Function;
@@ -42,8 +39,8 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-import net.minecraft.world.level.saveddata.maps.WorldMap;
 import net.minecraft.world.level.material.MaterialMapColor;
+import net.minecraft.world.level.saveddata.maps.WorldMap;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBot;
 import tv.ingoh.minecraft.plugins.ingobotcore.IngoBotTabCompleter;
 import tv.ingoh.minecraft.plugins.ingobotcore.Main;
@@ -52,6 +49,7 @@ import tv.ingoh.minecraft.plugins.ingobotcore.web.AsyncWebThread.Type;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.Query;
 import tv.ingoh.minecraft.plugins.ingobotcore.web.WebThread;
 import tv.ingoh.util.Colors;
+import tv.ingoh.util.MatchingUtils;
 import tv.ingoh.util.RandomTaglines;
 import tv.ingoh.util.RandomThings;
 import tv.ingoh.util.calculator.Calculator;
@@ -579,7 +577,21 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(Statistic.KILL_ENTITY, entType);
                                     IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + entity.replace("_", " ") + ChatColor.RESET + " kills.", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(EntityType.class, entity);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(entity + " is not a valid entity, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
+                                }
+                            }
+                            case "death", "deaths", "die", "dieto", "die_to" -> {
+                                String entity = argsS2.replace(" ", "_").toUpperCase();
+                                try {
+                                    EntityType entType = EntityType.valueOf(entity);
+                                    int value = senderP.getStatistic(Statistic.DEATHS, entType);
+                                    IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + entity.replace("_", " ") + ChatColor.RESET + " deaths.", discord, isPublic, sender);
+                                } catch (Exception e) {
+                                    String closestMatch = MatchingUtils.matchClosest(EntityType.class, entity);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(entity + " is not a valid entity, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "mine", "mined" -> {
@@ -589,7 +601,9 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(Statistic.MINE_BLOCK, mat);
                                     IngoBot.sendMessageTo(sender + " has mined " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(Material.class, item);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "break", "broken" -> {
@@ -599,7 +613,9 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(Statistic.BREAK_ITEM, mat);
                                     IngoBot.sendMessageTo(sender + " has broken " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(Material.class, item);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "craft", "crafted" -> {
@@ -609,7 +625,9 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(Statistic.CRAFT_ITEM, mat);
                                     IngoBot.sendMessageTo(sender + " has crafted " + ChatColor.AQUA + value + " " + item.replace("_", " ")+ ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(Material.class, item);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "use", "used", "uses" -> {
@@ -619,7 +637,9 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(Statistic.USE_ITEM, mat);
                                     IngoBot.sendMessageTo(sender + " has used " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(Material.class, item);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "pickup", "pick_up" -> {
@@ -629,7 +649,9 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(Statistic.PICKUP, mat);
                                     IngoBot.sendMessageTo(sender + " has picked up " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(Material.class, item);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "drop", "dropped" -> {
@@ -639,7 +661,9 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(Statistic.DROP, mat);
                                     IngoBot.sendMessageTo(sender + " has dropped " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(Material.class, item);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             default -> {
@@ -649,7 +673,9 @@ public class CoreCommands {
                                     int value = senderP.getStatistic(stat);
                                     IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + statistic.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(statistic + " is not a valid statistic, idiot.", discord, isPublic, sender);
+                                    String closestMatch = MatchingUtils.matchClosest(Statistic.class, statistic);
+                                    if (closestMatch != null) IngoBot.sendMessageTo(statistic + " is not a valid statistic, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendMessageTo(statistic + " is not a valid statistic, idiot.", discord, isPublic, sender);
                                 }
                             }
                                                         
@@ -680,21 +706,20 @@ public class CoreCommands {
                             main.getSWC(sender, isPublic, userg, true);
                             break;
                         case "rewards":
-                        /*
-                            IngoBot.sendMessageTo(ChatColor.BLUE + "<spawn> [20] SWC: Teleport to world spawn.\n" +
-                                                  ChatColor.BLUE + "<*manual> [50] SWC: Pick any unusual dragon head.\n" +
-                                                  ChatColor.BLUE + "<*manual> [50-100] SWC: Pick any unusual helmet (100 diamond | 80 turtle | 50 other).\n" +
-                                                  ChatColor.BLUE + "<*manual> [50-100] SWC: Pick any unusual elytra (100 effect AND song | 50 effect OR song).\n" +
-                                                  ChatColor.BLUE + "<*manual> [500] SWC: Choose 5 physical stickers from Community Commissions (IRL).\n" +
-                                                  ChatColor.BLUE + "<chicken> [500] SWC: Summon a random Legendary Resource Chicken at your current location.\n" +
-                                                  ChatColor.BLUE + "<*manual> [500] SWC: Create any non-beneficial, non-destuctive IngoBot command.\n" +
-                                                  ChatColor.BLUE + "- Regular SWC rewards can be claimed with " + ChatColor.LIGHT_PURPLE + "swc claim <name>, or by asking IngoH for <*manual> rewards.", discord, isPublic, sender);
-                        */
-                            IngoBot.sendMessageToRaw(ChatColor.BLUE + "Regular SWC rewards will be added soon.", discord, isPublic, sender);
-                            IngoBot.sendMessageToRaw(ChatColor.DARK_PURPLE + "[50] Total SWC: Wiki Contributor Feather.\n" +
-                                                  ChatColor.DARK_PURPLE + "[300] Total SWC: Super Contributor Feather.\n" +
-                                                  ChatColor.DARK_PURPLE + "[1500] Total SWC: Ultimate Contributor Feather.\n" +
-                                                  ChatColor.DARK_PURPLE + "- Total SWC rewards can be claimed with " + ChatColor.LIGHT_PURPLE + "swc claim milestones.", discord, isPublic, sender);
+                        IngoBot.sendMessageToRaw(ChatColor.BLUE + "<*manual> [20] SWC: Teleport to world spawn [COMMAND TO BE ADDED].\n" +
+                                                 ChatColor.BLUE + "<*manual> [50] SWC: Pick any unusual dragon head.\n" +
+                                                 ChatColor.BLUE + "<*manual> [50-100] SWC: Pick any unusual helmet (100 diamond | 80 turtle | 50 other).\n" +
+                                                 ChatColor.BLUE + "<*manual> [50-100] SWC: Pick any unusual elytra (100 effect AND song | 50 effect OR song).\n" +
+                                                 ChatColor.BLUE + "<*manual> [200+] SWC: 5+ physical stickers from Community Commissions. Each 5 additional stickers add 100 SWC.\n" +
+                                                 ChatColor.BLUE + "<*manual> [250] SWC: Summon a random Legendary Resource Chicken at your current location [COMMAND TO BE ADDED].\n" +
+                                                 ChatColor.BLUE + "<*manual> [500] SWC: Create any non-beneficial, non-destructive IngoBot command.\n" +
+                                                 ChatColor.BLUE + "- Regular SWC rewards can be claimed with " + ChatColor.LIGHT_PURPLE + "swc claim <name>, or by asking IngoH for <*manual> rewards.", discord, isPublic, sender);
+                        IngoBot.sendMessageToRaw(ChatColor.BLUE + "Regular SWC rewards will be added soon.", discord, isPublic, sender);
+                        IngoBot.sendMessageToRaw(ChatColor.DARK_PURPLE + "[50] Total SWC: Wiki Contributor Feather.\n" +
+                                                 ChatColor.DARK_PURPLE + "[300] Total SWC: Super Contributor Feather.\n" +
+                                                 ChatColor.DARK_PURPLE + "[750] Total SWC: Physical prismatic IngoFox sticker.\n" +
+                                                 ChatColor.DARK_PURPLE + "[1500] Total SWC: Ultimate Contributor Feather.\n" +
+                                                 ChatColor.DARK_PURPLE + "- Total SWC rewards can be claimed with " + ChatColor.LIGHT_PURPLE + "swc claim milestones.", discord, isPublic, sender);
                             break;
                         case "add":
                             if (senderP.isOp()) {

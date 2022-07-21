@@ -84,11 +84,11 @@ public class AsyncWebThread implements Runnable {
                     case CHAT:
                         try {
                             String text = args[0];
-                            int limit = 900 - URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F").length();
+                            int limit = 898 - URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F").length();
                             boolean finish = Boolean.parseBoolean(args[1]);
                             String model = args[2];
                             while (u == null || u.toString().length() > 1000) {
-                                if (model.equals("gpt2")) u = new URL(CHAT.replace("%0%", URLEncoder.encode(ch.getHistory(isPublic, user, limit) + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
+                                if (model.equals("gpt2")) u = new URL(CHAT.replace("%0%", URLEncoder.encode(ch.getHistory(isPublic, user, limit) + "\r\n" + text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
                                 else if (model.equals("gptneo") || model.equals("gpt2furry")) u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", model));
                                 else u = new URL(CHAT.replace("%0%", URLEncoder.encode(text.replaceAll("[^\\x00-\\x7F]", ""), "UTF-8").replace("%2F", "%252F")).replace("%1%", "gpt2"));
                                 limit -= 50;
