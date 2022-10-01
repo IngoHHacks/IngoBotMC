@@ -785,7 +785,7 @@ public class Filter {
                         if (s.contains(string)) return true;
                 }
                 for (String string : exactBanned) {
-                        if (s.matches(".*([^a-zA-Z]|^)" + string + "([^a-zA-Z]|$).*")) return true;
+                        if (s.matches("([^a-zA-Z]|^)*" + string + "([^a-zA-Z]|$)*")) return true;
                 }
                 return false;
         }

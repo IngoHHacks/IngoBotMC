@@ -375,10 +375,10 @@ public class AsyncWebThread implements Runnable {
                             if (row5 != null) s += row4.replace("<br>","\n");
                             if (row6 != null) s += row5.replace("<br>","\n");
                             if (tries == 2) {
-                                if (!Filter.isBanned(s)) {
-                                    if (!row1.equals(">>") && !row1.equals(">> ")) {
-                                        out = s;
-                                    }
+                                if (!row1.equals(">>") && !row1.equals(">> ")) {
+                                    out = s;
+                                }
+                                if (!Filter.isBanned(out)) {
                                     discord.sendDebug(msg + out);
                                     r.close();
                                     return out;
@@ -424,10 +424,10 @@ public class AsyncWebThread implements Runnable {
                                     if (row6 != null) s += "\n...";
                                 }
                                 if (tries == 2) {
-                                    if (!Filter.isBanned(s) && !Filter.isBanned(out)) {
-                                        if (finish && !s.equals(">>") && !s.equals(">> ")) {
-                                            out = s;
-                                        }
+                                    if (finish && !s.equals(">>") && !s.equals(">> ")) {
+                                        out = s;
+                                    }
+                                    if (!Filter.isBanned(out)) {
                                         discord.sendDebug(("..." + out).replace("...>>", "..."));
                                         r.close();
                                         return out;

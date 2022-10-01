@@ -8,5 +8,8 @@ target/
 .classpath
 .factorypath
 
+# IntelliJ IDEA
+.idea
+
 lib/
 bin/
