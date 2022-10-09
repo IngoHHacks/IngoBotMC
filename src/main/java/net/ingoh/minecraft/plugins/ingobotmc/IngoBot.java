@@ -90,6 +90,26 @@ public class IngoBot {
         }
     }
 
+    public static void sendErrorMessageTo(String message, DiscordInterface discord, boolean isPublic, String sender) {
+        if (isPublic) sendErrorMessage(message, discord);
+        else {
+            CommandSender s = Bukkit.getPlayer(sender);
+            if (s != null) sendErrorMessage(message, s, discord);
+        }
+    }
+
+    public static void sendErrorMessage(String message, DiscordInterface discord) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendRawMessage(ChatColor.RED + message);
+        }
+        discord.sendChat(message, true);
+    }
+
+    public static void sendErrorMessage(String message, CommandSender user, DiscordInterface discord) {
+        user.sendMessage(ChatColor.RED + message);
+        discord.sendChat("(to " + user.getName() + ") " + message, false);
+    }
+
     public static void sendMessagesFromAsync(Main main, String messages) {
         String[] msgs = messages.split("\n");
         main.scheduleMessage(new Message("<IngoBot> " + msgs[0], null));

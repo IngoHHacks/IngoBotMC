@@ -232,7 +232,7 @@ public class Main extends JavaPlugin implements Listener {
             if (args.length > 0) {
                 result = CoreCommands.executeCommand(this, args[0], Arrays.copyOfRange(args, 1, args.length), sender.getName(), wThread, false, discord);
                 if (!result.isSuccessful()) {
-                    IngoBot.sendMessageToRaw(ChatColor.RED + result.toString(), discord, false, sender.getName());
+                    IngoBot.sendErrorMessageTo(result.toString(), discord, false, sender.getName());
                     if (result.isUnhandledException()) {
                         result.printStackTrace(discord);
                     }

@@ -79,7 +79,7 @@ public class MainLoop implements Runnable {
                 ScheduledCommand cmd = commandQueue.getFirst();
                 result = CoreCommands.executeCommand(cmd);
                 if (!result.isSuccessful()) {
-                    IngoBot.sendMessageToRaw(result.toString(), discord, cmd.isPublic(), cmd.getSender());
+                    IngoBot.sendErrorMessageTo(result.toString(), discord, cmd.isPublic(), cmd.getSender());
                     if (result.isUnhandledException()) {
                         result.printStackTrace(discord);
                     }

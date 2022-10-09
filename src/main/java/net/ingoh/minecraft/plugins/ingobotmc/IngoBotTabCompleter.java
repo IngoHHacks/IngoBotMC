@@ -24,6 +24,7 @@ public class IngoBotTabCompleter implements TabCompleter {
         "f",
         "fs",
         "furry",
+        "hidestats",
         "history",
         "how",
         "image",

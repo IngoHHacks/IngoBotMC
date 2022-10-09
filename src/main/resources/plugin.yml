@@ -1,4 +1,4 @@
-main: Main
+main: net.ingoh.minecraft.plugins.ingobotmc.Main
 name: IngoBotMC
 author: IngoH
 softdepend: [Minecord]

@@ -5,8 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.HashMap;
+import java.util.*;
 import java.util.function.Function;
 
 import javax.imageio.ImageIO;
@@ -58,6 +57,8 @@ public class CoreCommands {
 
     static long imageCooldownTime = 0;
     static int count69 = -1;
+
+    static List<UUID> hiddenStatsPlayers = new LinkedList<>();
 
     static HashMap<String, Query> lastQueries = new HashMap<>();
 
@@ -122,7 +123,7 @@ public class CoreCommands {
                         wt.undo(qr);
                         wt.add(qr);
                     } else {
-                        IngoBot.sendMessageTo(ChatColor.RED + "There is nothing to retry, idiot.", discord, isPublic, sender);
+                        IngoBot.sendErrorMessageTo(ChatColor.RED + "There is nothing to retry, idiot.", discord, isPublic, sender);
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "FINISHSENTENCE":
@@ -218,7 +219,7 @@ public class CoreCommands {
                 case "PING":
                     if (args.length > 0) return new CommandResult(ResultType.TOOMANYARGUMENTSEXCEPTION, Integer.toString(args.length), "0");
                     if (senderP != null) IngoBot.sendMessageTo("Ping: " + senderP.getPing(), discord, isPublic, sender);
-                    else IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                    else IngoBot.sendErrorMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "HOW":
                     IngoBot.sendMessageTo("§LHOW", discord, isPublic, sender);
@@ -265,7 +266,7 @@ public class CoreCommands {
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "RQ":
                     if (senderP != null) senderP.kickPlayer("Ragequit?");
-                    else IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                    else IngoBot.sendErrorMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "CUM":
                     if (senderP != null) senderP.playSound(senderP.getLocation(), Sound.BLOCK_HONEY_BLOCK_BREAK, 100, 0.0f);
@@ -368,7 +369,7 @@ public class CoreCommands {
                                             count69++;
                                             IngoBot.sendMessageTo(ChatColor.BLUE + "You did a 69! " + count69 + " players have done a 69!", discord, isPublic, sender);
                                         } else {
-                                            IngoBot.sendMessageTo("Something went wrong trying to do a 69...", discord, isPublic, sender);
+                                            IngoBot.sendErrorMessageTo("Something went wrong trying to do a 69... idiot?", discord, isPublic, sender);
                                         }
                                         return "";
                                     };
@@ -378,7 +379,7 @@ public class CoreCommands {
                                     Bson u = Updates.set("_69", true);
                                     main.getMongo().update("players", q2, u, isPublic, f2);
                                 } else {
-                                    IngoBot.sendMessageTo("You have already used the 69 command, idiot.", discord, isPublic, sender);
+                                    IngoBot.sendErrorMessageTo("You have already used the 69 command, idiot.", discord, isPublic, sender);
                                 }
                                 return "";
                             }
@@ -500,15 +501,15 @@ public class CoreCommands {
                             comp.setClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, "data:image/png;base64," + b64));
                             senderP.spigot().sendMessage(comp);
                         } else {
-                            IngoBot.sendMessageTo("You are not holding a map, idiot.", discord, isPublic, sender);
+                            IngoBot.sendErrorMessageTo("You are not holding a map, idiot.", discord, isPublic, sender);
                         }
                     } else {
-                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendErrorMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "PRINTALLMAPS":
                     if (senderP == null) {
-                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendErrorMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                         return new CommandResult(ResultType.SUCCESS, command);
                     }
                     if (senderP.isOp()) {
@@ -553,7 +554,22 @@ public class CoreCommands {
                             i2++;
                         }
                     } else {
-                        IngoBot.sendMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendErrorMessageTo("Only Operators may execute this command, idiot.", discord, isPublic, sender);
+                    }
+                    return new CommandResult(ResultType.SUCCESS, command);
+
+                case "HIDESTATS":
+                case "HIDESTATISTICS":
+                    if (senderP == null) {
+                        IngoBot.sendErrorMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                        return new CommandResult(ResultType.SUCCESS, command);
+                    }
+                    if (hiddenStatsPlayers.contains(senderP.getUniqueId())) {
+                        hiddenStatsPlayers.remove(senderP.getUniqueId());
+                        IngoBot.sendMessageToRaw("Your statistics are now visible for the statistics command.", discord, isPublic, sender);
+                    } else {
+                        hiddenStatsPlayers.add(senderP.getUniqueId());
+                        IngoBot.sendMessageToRaw("Your statistics are now hidden for the statistics command until the server restarts or you execute this command again.", discord, isPublic, sender);
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "STATISTICS":
@@ -561,11 +577,28 @@ public class CoreCommands {
                 case "STATS":
                 case "STAT":
                     if (senderP == null) {
-                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendErrorMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                         return new CommandResult(ResultType.SUCCESS, command);
                     }
                     if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1*");
                     else {
+                        Player targetPlayer = senderP;
+                        if (args[0].startsWith("@") && args[0].length() > 1) {
+                            targetPlayer = Bukkit.getPlayer(args[0].substring(1));
+                            if (targetPlayer == null) {
+                                IngoBot.sendErrorMessageTo("Player " + args[0].substring(1) + " not found, idiot.", discord, isPublic, sender);
+                                return new CommandResult(ResultType.SUCCESS, command);
+                            } else if (hiddenStatsPlayers.contains(targetPlayer.getUniqueId())) {
+                                IngoBot.sendErrorMessageTo("Player " + args[0].substring(1) + " has hidden their statistics, idiot.", discord, isPublic, sender);
+                                return new CommandResult(ResultType.SUCCESS, command);
+                            }
+                        }
+                        if (args[0].startsWith("@")) {
+                            argsS = argsS.substring(argsS.indexOf(" ") + 1);
+                        }
+
+                        String targetName = targetPlayer.getDisplayName();
+
                         String[] split = argsS.split(" ",2);
                         String type = split[0].toLowerCase();
                         String argsS2 = split.length > 1 ? split[1] : "";
@@ -574,108 +607,108 @@ public class CoreCommands {
                                 String entity = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     EntityType entType = EntityType.valueOf(entity);
-                                    int value = senderP.getStatistic(Statistic.KILL_ENTITY, entType);
-                                    IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + entity.replace("_", " ") + ChatColor.RESET + " kills.", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.KILL_ENTITY, entType);
+                                    IngoBot.sendMessageTo(targetName + " has " + ChatColor.AQUA + value + " " + entity.replace("_", " ") + ChatColor.RESET + " kills.", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(EntityType.class, entity);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(entity + " is not a valid entity, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(entity + " is not a valid entity, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "death", "deaths", "die", "dieto", "die_to" -> {
                                 String entity = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     EntityType entType = EntityType.valueOf(entity);
-                                    int value = senderP.getStatistic(Statistic.DEATHS, entType);
-                                    IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + entity.replace("_", " ") + ChatColor.RESET + " deaths.", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.DEATHS, entType);
+                                    IngoBot.sendMessageTo(targetName + " has " + ChatColor.AQUA + value + " " + entity.replace("_", " ") + ChatColor.RESET + " deaths.", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(EntityType.class, entity);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(entity + " is not a valid entity, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(entity + " is not a valid entity, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(entity + " is not a valid entity, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "mine", "mined" -> {
                                 String item = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     Material mat = Material.valueOf(item);
-                                    int value = senderP.getStatistic(Statistic.MINE_BLOCK, mat);
-                                    IngoBot.sendMessageTo(sender + " has mined " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.MINE_BLOCK, mat);
+                                    IngoBot.sendMessageTo(targetName + " has mined " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(Material.class, item);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "break", "broken" -> {
                                 String item = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     Material mat = Material.valueOf(item);
-                                    int value = senderP.getStatistic(Statistic.BREAK_ITEM, mat);
-                                    IngoBot.sendMessageTo(sender + " has broken " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.BREAK_ITEM, mat);
+                                    IngoBot.sendMessageTo(targetName + " has broken " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(Material.class, item);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "craft", "crafted" -> {
                                 String item = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     Material mat = Material.valueOf(item);
-                                    int value = senderP.getStatistic(Statistic.CRAFT_ITEM, mat);
-                                    IngoBot.sendMessageTo(sender + " has crafted " + ChatColor.AQUA + value + " " + item.replace("_", " ")+ ChatColor.RESET + ".", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.CRAFT_ITEM, mat);
+                                    IngoBot.sendMessageTo(targetName + " has crafted " + ChatColor.AQUA + value + " " + item.replace("_", " ")+ ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(Material.class, item);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "use", "used", "uses" -> {
                                 String item = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     Material mat = Material.valueOf(item);
-                                    int value = senderP.getStatistic(Statistic.USE_ITEM, mat);
-                                    IngoBot.sendMessageTo(sender + " has used " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.USE_ITEM, mat);
+                                    IngoBot.sendMessageTo(targetName + " has used " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(Material.class, item);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "pickup", "pick_up" -> {
                                 String item = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     Material mat = Material.valueOf(item);
-                                    int value = senderP.getStatistic(Statistic.PICKUP, mat);
-                                    IngoBot.sendMessageTo(sender + " has picked up " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.PICKUP, mat);
+                                    IngoBot.sendMessageTo(targetName + " has picked up " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(Material.class, item);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             case "drop", "dropped" -> {
                                 String item = argsS2.replace(" ", "_").toUpperCase();
                                 try {
                                     Material mat = Material.valueOf(item);
-                                    int value = senderP.getStatistic(Statistic.DROP, mat);
-                                    IngoBot.sendMessageTo(sender + " has dropped " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(Statistic.DROP, mat);
+                                    IngoBot.sendMessageTo(targetName + " has dropped " + ChatColor.AQUA + value + " " + item.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(Material.class, item);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(item + " is not a valid item, idiot.", discord, isPublic, sender);
                                 }
                             }
                             default -> {
                                 String statistic = argsS.replace(" ", "_").toUpperCase();
                                 try {
                                     Statistic stat = Statistic.valueOf(statistic);
-                                    int value = senderP.getStatistic(stat);
-                                    IngoBot.sendMessageTo(sender + " has " + ChatColor.AQUA + value + " " + statistic.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
+                                    int value = targetPlayer.getStatistic(stat);
+                                    IngoBot.sendMessageTo(targetName + " has " + ChatColor.AQUA + value + " " + statistic.replace("_", " ") + ChatColor.RESET + ".", discord, isPublic, sender);
                                 } catch (Exception e) {
                                     String closestMatch = MatchingUtils.matchClosest(Statistic.class, statistic);
-                                    if (closestMatch != null) IngoBot.sendMessageTo(statistic + " is not a valid statistic, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
-                                    else IngoBot.sendMessageTo(statistic + " is not a valid statistic, idiot.", discord, isPublic, sender);
+                                    if (closestMatch != null) IngoBot.sendErrorMessageTo(statistic + " is not a valid statistic, idiot. Did you mean [" + closestMatch + "]?", discord, isPublic, sender);
+                                    else IngoBot.sendErrorMessageTo(statistic + " is not a valid statistic, idiot.", discord, isPublic, sender);
                                 }
                             }
                                                         
@@ -684,7 +717,7 @@ public class CoreCommands {
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "SWC":
                     if (senderP == null) {
-                        IngoBot.sendMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
+                        IngoBot.sendErrorMessageTo("Only players may execute this command, idiot.", discord, isPublic, sender);
                         return new CommandResult(ResultType.SUCCESS, command);
                     }
                     if (args.length < 1) return new CommandResult(ResultType.TOOFEWARGUMENTSEXCEPTION, Integer.toString(args.length), "1+");
@@ -695,7 +728,7 @@ public class CoreCommands {
                         if (args[1].toLowerCase().equals("milestones")) {
                             main.claimMilestones(isPublic, senderP);
                         } else {
-                            IngoBot.sendMessageTo(args[1] + " is not a valid reward, idiot.", discord, isPublic, sender);
+                            IngoBot.sendErrorMessageTo(args[1] + " is not a valid reward, idiot.", discord, isPublic, sender);
                         }
                             break;
                         case "get":
@@ -730,9 +763,9 @@ public class CoreCommands {
                                     int amount = Integer.parseInt(args[2]);
                                     main.addSWC(sender, isPublic, user, amount, true);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                    IngoBot.sendErrorMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
                                 }
-                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            } else IngoBot.sendErrorMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
                             break;
                         case "remove":
                             if (senderP.isOp()) {
@@ -743,9 +776,9 @@ public class CoreCommands {
                                     int amount = Integer.parseInt(args[2]);
                                     main.addSWC(sender, isPublic, user, -amount, true);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                    IngoBot.sendErrorMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
                                 }
-                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            } else IngoBot.sendErrorMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
                             break;
                         case "softadd":
                             if (senderP.isOp()) {
@@ -756,9 +789,9 @@ public class CoreCommands {
                                     int amount = Integer.parseInt(args[2]);
                                     main.addSWC(sender, isPublic, user, amount, false);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                    IngoBot.sendErrorMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
                                 }
-                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            } else IngoBot.sendErrorMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
                             break;
                         case "softremove":
                             if (senderP.isOp()) {
@@ -769,13 +802,13 @@ public class CoreCommands {
                                     int amount = Integer.parseInt(args[2]);
                                     main.addSWC(sender, isPublic, user, -amount, false);
                                 } catch (Exception e) {
-                                    IngoBot.sendMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
+                                    IngoBot.sendErrorMessageTo(args[2] + " is not a valid amount, idiot.", discord, isPublic, sender);
                                 }
-                            } else IngoBot.sendMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
+                            } else IngoBot.sendErrorMessageTo("Only Operators may execute this operation, idiot.", discord, isPublic, sender);
                             break;
                         default: 
-                            if (!senderP.isOp()) IngoBot.sendMessageTo("Unknown argument idiot: " + args[0] + ". Valid arguments: [claim, get, rewards]", discord, isPublic, sender);
-                            else IngoBot.sendMessageTo("Unknown argument, idiot: " + args[0] + ". Valid arguments: [claim, get, rewards, add, remove, softadd, softremove]", discord, isPublic, sender);
+                            if (!senderP.isOp()) IngoBot.sendErrorMessageTo("Unknown argument, idiot: " + args[0] + ". Valid arguments: [claim, get, rewards]", discord, isPublic, sender);
+                            else IngoBot.sendErrorMessageTo("Unknown argument, idiot: " + args[0] + ". Valid arguments: [claim, get, rewards, add, remove, softadd, softremove]", discord, isPublic, sender);
                     }
                     return new CommandResult(ResultType.SUCCESS, command);
                 default:
