@@ -1,3 +1,3 @@
-# IngoBot Core
-IngoBot Core Plugin  
+# IngoBotMC
+IngoBotMC Plugin  
 (Not intended for public use)
