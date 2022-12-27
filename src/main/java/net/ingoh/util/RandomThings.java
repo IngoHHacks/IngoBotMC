@@ -42,6 +42,6 @@ public class RandomThings {
     public static String getRandomThing() {
         //if (instance == null) initialize();
         //return instance.keys.get((int)(Math.random() * instance.keys.size())).replace("_", " ");
-        return "error";
+        return "something";
     }
 }

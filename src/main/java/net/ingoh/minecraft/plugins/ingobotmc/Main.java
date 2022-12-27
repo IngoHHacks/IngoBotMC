@@ -366,7 +366,7 @@ public class Main extends JavaPlugin implements Listener {
     public void createNPCFor(ServerPlayer npc, Player target) {
         ServerGamePacketListenerImpl connection = ((CraftPlayer)target).getHandle().connection;
         connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, npc));
-        connection.send(new ClientboundAddEntityPacket(npc));
+        connection.send(new ClientboundAddPlayerPacket(npc));
         connection.send(new ClientboundRotateHeadPacket(npc, (byte)(64)));
         connection.send(new ClientboundSetEntityDataPacket(npc.getId(), npc.getEntityData().getNonDefaultValues()));
     }
