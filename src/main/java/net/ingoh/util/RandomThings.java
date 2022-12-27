@@ -6,7 +6,7 @@ import java.util.Set;
 
 import org.bukkit.Bukkit;
 
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.Registry;
 
 public class RandomThings {
 
@@ -15,14 +15,16 @@ public class RandomThings {
     public List<String> keys = new LinkedList<>();
 
     public RandomThings() {
+        /*
         Bukkit.getLogger().info("[IngoBotMC] Loading registries...");
-        IRegistry<? extends IRegistry<?>> registries = IRegistry.d;
+        IRegistry<? extends IRegistry<?>> registries = IRegistry.
         registries.forEach(registry -> {
             Set<?> set = registry.e();
             set.forEach(item -> add(item.toString()));
         });
         
         Bukkit.getLogger().info("[IngoBotMC] Registries loaded!");
+        */
     }
 
     private void add(String str) {
@@ -33,11 +35,13 @@ public class RandomThings {
     }
 
     public static void initialize() {
-        instance = new RandomThings();
+        //instance = new RandomThings();
     }
 
+
     public static String getRandomThing() {
-        if (instance == null) initialize();
-        return instance.keys.get((int)(Math.random() * instance.keys.size())).replace("_", " ");
+        //if (instance == null) initialize();
+        //return instance.keys.get((int)(Math.random() * instance.keys.size())).replace("_", " ");
+        return "error";
     }
 }

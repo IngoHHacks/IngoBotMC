@@ -27,6 +27,14 @@ import net.ingoh.minecraft.plugins.ingobotmc.web.WebThread;
 import net.ingoh.util.Mongo;
 import net.ingoh.util.PlayerListHandler;
 import net.ingoh.util.RandomThings;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -37,9 +45,9 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -63,18 +71,7 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
-import net.minecraft.network.protocol.game.PacketPlayOutEntity.PacketPlayOutEntityLook;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityHeadRotation;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata;
-import net.minecraft.network.protocol.game.PacketPlayOutNamedEntitySpawn;
-import net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo;
-import net.minecraft.network.syncher.DataWatcherObject;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.server.level.WorldServer;
-import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.util.Tuple;
 
@@ -93,7 +90,7 @@ public class Main extends JavaPlugin implements Listener {
     LinkedList<Message> outputQueue;
     LinkedList<ScheduledCommand> commandQueue;
     MainLoop mainLoop;
-    public EntityPlayer ingobotNPC;
+    ServerPlayer ingobotNPC;
     LinkedList<String> syncCommands;
     LinkedList<ExternalMessageEvent> minecordBC;
     ArrayList<Countdown> countdowns;
@@ -102,7 +99,7 @@ public class Main extends JavaPlugin implements Listener {
     LinkedList<Integer> sacrificeAges;
 
     MinecraftServer nmsServer;
-    WorldServer nmsWorld; // First world (overworld)
+    ServerLevel nmsWorld; // First world (overworld)
     GameProfile gameProfile;
 
     Mongo mongo;
@@ -153,7 +150,7 @@ public class Main extends JavaPlugin implements Listener {
 
         // Entity
         nmsServer = ((CraftServer) Bukkit.getServer()).getServer();
-        nmsWorld = ((CraftWorld)Bukkit.getWorlds().get(0)).getHandle(); // First world (overworld)
+        nmsWorld = ((CraftWorld)Bukkit.getWorlds().get(0)).getHandle();
         gameProfile = new GameProfile(UUID.fromString("54655d3e-47ae-43f8-8108-310967590778"), "IngoBot");
 
         // SKIN
@@ -161,14 +158,14 @@ public class Main extends JavaPlugin implements Listener {
 
         ingobotNPC = new ListeningNPC(nmsServer, nmsWorld, gameProfile, this, discord);
 
-        ingobotNPC.m(true); // Invulnerable
+        ingobotNPC.setInvulnerable(true);
 
         Field f2;
         try {
-            f2 = EntityPlayer.class.getField("bO"); // DATA_PLAYER_MODE_CUSTOMISATION 
+            f2 = ServerPlayer.class.getField("bO");
             f2.setAccessible(true);
-            DataWatcherObject<Byte> dpmc = (DataWatcherObject<Byte>) f2.get(null);
-            ingobotNPC.ai().b(dpmc, (byte) 126); // Enable second layer (no cape)
+            EntityDataAccessor<Byte> dpmc = (EntityDataAccessor<Byte>) f2.get(null);
+            ingobotNPC.getEntityData().set(dpmc, (byte) 126); // Enable second layer (no cape)
         } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
             Bukkit.getLogger().warning("[IngoBotMC] bO field not found");
         }
@@ -176,26 +173,23 @@ public class Main extends JavaPlugin implements Listener {
         try {
             InetSocketAddress address = new InetSocketAddress(config.getFakeConnectionHost(), config.getFakeConnectionPort());
 
-            NetworkManager conn = NetworkManager.a(address, true);
+            Connection conn = Connection.connectToServer(address, true);
 
             ingobotNPC.getBukkitEntity().setSleepingIgnored(true);
 
-            nmsWorld.a(ingobotNPC); // Add to overworld
+            nmsServer.getPlayerList().placeNewPlayer(conn, ingobotNPC);
 
-            nmsServer.ac().a(conn, ingobotNPC); // Summon to create connection
-
-            nmsServer.ac().t().add(ingobotNPC); // Add to player list
-
-            ingobotNPC.b(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
+            ingobotNPC.moveTo(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
 
             RandomThings.initialize();
 
             Field f;
+
             try {
                 // CRINGE PATCH STUFF
                 f = PlayerList.class.getDeclaredField("playersByName");
                 f.setAccessible(true);
-                Map<String,EntityPlayer> map = (Map<String,EntityPlayer>) f.get(nmsServer.ac());
+                Map<String,ServerPlayer> map = (Map<String,ServerPlayer>) f.get(nmsServer.getPlayerList());
                 map.put("ingobot", ingobotNPC);
 
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
@@ -369,17 +363,17 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    public void createNPCFor(EntityPlayer npc, Player target) {
-        PlayerConnection connection = ((CraftPlayer)target).getHandle().b; /* playerconnection */
-        connection.a(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a /* add */, npc));
-        connection.a(new PacketPlayOutNamedEntitySpawn(npc));
-        connection.a(new PacketPlayOutEntityHeadRotation(npc, (byte)(64)));
-        connection.a(new PacketPlayOutEntityMetadata(npc.ae(), npc.ai(), true));
+    public void createNPCFor(ServerPlayer npc, Player target) {
+        ServerGamePacketListenerImpl connection = ((CraftPlayer)target).getHandle().connection;
+        connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, npc));
+        connection.send(new ClientboundAddEntityPacket(npc));
+        connection.send(new ClientboundRotateHeadPacket(npc, (byte)(64)));
+        connection.send(new ClientboundSetEntityDataPacket(npc.getId(), npc.getEntityData().getNonDefaultValues()));
     }
 
-    public void playAttackAnimationFor(EntityPlayer npc, Player target) {
-        PlayerConnection connection = ((CraftPlayer)target).getHandle().b; /* playerconnection */
-        connection.a(new PacketPlayOutAnimation(npc, 0));
+    public void playAttackAnimationFor(ServerPlayer npc, Player target) {
+        ServerGamePacketListenerImpl connection = ((CraftPlayer)target).getHandle().connection;
+        connection.send(new ClientboundAnimatePacket(npc, 0));
     }
 
     public void sendCommand(String contentRaw) {
@@ -456,11 +450,11 @@ public class Main extends JavaPlugin implements Listener {
         return nmsServer;
     }
 
-    public WorldServer getNmsWorld() {
+    public Level getNmsWorld() {
         return nmsWorld;
     }
 
-    public EntityPlayer getIngobotNPC() {
+    public ServerPlayer getIngobotNPC() {
         return ingobotNPC;
     }
 
@@ -485,10 +479,10 @@ public class Main extends JavaPlugin implements Listener {
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.equals(ingobotNPC.getBukkitEntity()) || (player.getWorld() != ingobotNPC.getBukkitEntity().getWorld())) continue;
             if (player.getLocation().clone().add(0, 1.6, 0).distance(li) < 50) {
-                PlayerConnection connection = ((CraftPlayer)player).getHandle().b; /* playerconnection */
+                ServerGamePacketListenerImpl connection = ((CraftPlayer)player).getHandle().connection;
                 Tuple<Double, Double> rotation = rotateTowards(li, l);
-                connection.a(new PacketPlayOutEntityHeadRotation(ingobotNPC, (byte)(rotation.a() * (256.0 / 360.0))));
-                connection.a(new PacketPlayOutEntityLook(ingobotNPC.ae(), (byte)(rotation.a() * (256.0 / 360.0)), (byte)(rotation.b() * (256.0 / 360.0)), true));
+                connection.send(new ClientboundRotateHeadPacket(ingobotNPC, (byte)(rotation.getA() * (256.0 / 360.0))));
+                connection.send(new ClientboundMoveEntityPacket.Rot(ingobotNPC.getId(), (byte)(rotation.getA() * (256.0 / 360.0)), (byte)(rotation.getB() * (256.0 / 360.0)), true));
             }
         }
     }
@@ -497,8 +491,8 @@ public class Main extends JavaPlugin implements Listener {
         for (Player player : Bukkit.getOnlinePlayers()) {
             Location l = player.getLocation();
             if (l.getX() > 155.5 && l.getX() < 165.5 &&  l.getY() > 50 && l.getY() < 60 && l.getZ() > 203.5 && l.getZ() < 213.5) {
-                PlayerConnection connection = ((CraftPlayer)player).getHandle().b; /* playerconnection */
-                connection.a(new PacketPlayOutAnimation(ingobotNPC, 1));
+                ServerGamePacketListenerImpl connection = ((CraftPlayer)player).getHandle().connection;
+                connection.send(new ClientboundAnimatePacket(ingobotNPC, 1));
             }
         }
     }

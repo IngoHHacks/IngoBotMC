@@ -23,7 +23,6 @@ public class IngoBotTabCompleter implements TabCompleter {
         "eyes",
         "f",
         "fs",
-        "furry",
         "hidestats",
         "history",
         "how",

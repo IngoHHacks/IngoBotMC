@@ -7,6 +7,7 @@ import net.ingoh.minecraft.plugins.ingobotmc.command.CommandResult;
 import net.ingoh.minecraft.plugins.ingobotmc.command.CoreCommands;
 import net.ingoh.minecraft.plugins.ingobotmc.command.ScheduledCommand;
 import net.ingoh.minecraft.plugins.ingobotmc.discord.DiscordInterface;
+import net.minecraft.commands.CommandSourceStack;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
@@ -15,7 +16,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
-import net.minecraft.commands.CommandListenerWrapper;
 
 public class MainLoop implements Runnable {
 
@@ -90,8 +90,8 @@ public class MainLoop implements Runnable {
             if (syncCommands.size() > 0) {
                 String contentRaw = syncCommands.getFirst();
                 if (contentRaw.length() > 1 && contentRaw.charAt(0) == '.' && contentRaw.charAt(1) != '.') {
-                    CommandListenerWrapper clw = mainI.ingobotNPC.cU();
-                    mainI.nmsServer.aC().a(clw, "/" + contentRaw.substring(1));
+                    CommandSourceStack clw = mainI.ingobotNPC.createCommandSourceStack();
+                    mainI.nmsServer.getCommands().dispatchServerCommand(clw, "/" + contentRaw.substring(1));
                 }
                 else Bukkit.broadcastMessage("[IngoBot] " + contentRaw);
                 syncCommands.removeFirst();

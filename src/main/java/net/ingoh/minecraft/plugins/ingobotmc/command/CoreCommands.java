@@ -25,8 +25,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
-import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_19_R1.map.CraftMapRenderer;
+import org.bukkit.craftbukkit.v1_19_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R2.map.CraftMapRenderer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -45,8 +45,8 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-import net.minecraft.world.level.material.MaterialMapColor;
-import net.minecraft.world.level.saveddata.maps.WorldMap;
+import net.minecraft.world.level.material.MaterialColor;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.ingoh.minecraft.plugins.ingobotmc.IngoBot;
 import net.ingoh.minecraft.plugins.ingobotmc.IngoBotTabCompleter;
 import net.ingoh.minecraft.plugins.ingobotmc.Main;
@@ -78,6 +78,7 @@ public class CoreCommands {
                 argsF += s;
             }
             TextComponent selector = new TextComponent(sender);
+            if (!command.matches(".*[a-zA-Z0-9].*")) return new CommandResult(ResultType.SUCCESS, command);
             switch (command.toUpperCase()) {
                 // TODO: Use objects instead of switch cases
                 case "CALCULATE":
@@ -137,17 +138,6 @@ public class CoreCommands {
                     Query qq2 = new Query(AsyncWebThread.Type.CHAT, sender, new String[]{argsS, "true", "gpt2"}, isPublic);
                     wt.add(qq2);
                     lastQueries.put(isPublic ? "*" : sender, qq2);
-                    return new CommandResult(ResultType.SUCCESS, command);
-                case "FURRY":
-                    if (!isPublic) {
-                        if (senderP != null) senderP.sendMessage(ChatColor.GRAY + "YOU -> IngoBot: " + ChatColor.RESET + " [F] " + argsS + "...");
-                        discord.sendDebug("{" + sender + "} [F] " + argsS + "...");
-                    } else {
-                        discord.sendDebug("[" + sender + "] [F] " + argsS + "...");
-                    }
-                    Query qq3 = new Query(AsyncWebThread.Type.CHAT, sender, new String[]{argsS, "true", "gpt2furry"}, isPublic);
-                    wt.add(qq3);
-                    lastQueries.put(isPublic ? "*" : sender, qq3);
                     return new CommandResult(ResultType.SUCCESS, command);
                 case "STORY":
                 case "S":
@@ -466,12 +456,12 @@ public class CoreCommands {
                         if (stack.getType() != null && stack.getType() == Material.FILLED_MAP) {
                             MapMeta mm = (MapMeta) stack.getItemMeta();
                             MapRenderer renderer = mm.getMapView().getRenderers().get(0);
-                            Field f1 = CraftMapRenderer.class.getDeclaredField("worldMap");
+                            Field f1 = CraftMapRenderer.class.getDeclaredField("MapItemSavedData");
                             f1.setAccessible(true);
-                            WorldMap worldMap = (WorldMap) f1.get(renderer);
-                            Field f2 = worldMap.getClass().getDeclaredField("g");
+                            MapItemSavedData MapItemSavedData = (MapItemSavedData) f1.get(renderer);
+                            Field f2 = MapItemSavedData.getClass().getDeclaredField("colors");
                             f2.setAccessible(true);
-                            byte[] materials = (byte[]) f2.get(worldMap); // colors
+                            byte[] materials = (byte[]) f2.get(MapItemSavedData); // colors
                             byte[] colors = new byte[materials.length*3];
 
                             int sz = (int) Math.sqrt(materials.length);
@@ -483,7 +473,7 @@ public class CoreCommands {
                                 for(int c=0; c<sz; c++)
                                 {
                                     int index=r*sz+c;
-                                    int dec = MaterialMapColor.b(materials[i]);
+                                    int dec = MaterialColor.getColorFromPackedId(materials[i]);
                                     int red = dec & 0xff;
                                     int green = (dec >> 8) & 0xff;
                                     int blue = (dec >> 16) & 0xff;
@@ -515,12 +505,12 @@ public class CoreCommands {
                     if (senderP.isOp()) {
                         int i2 = 0;
                         while (true) {
-                            WorldMap map = (WorldMap) ((CraftServer) Bukkit.getServer()).getServer().C().t().a(WorldMap::b, "map_" + i2);
+                            MapItemSavedData map = (MapItemSavedData) ((CraftServer) Bukkit.getServer()).getServer().overworld().getDataStorage().get(MapItemSavedData::load, "map_" + i2);
                             if (map == null) {
                                 break;
                             }
                             try {
-                                Field f3 = map.getClass().getDeclaredField("g");
+                                Field f3 = map.getClass().getDeclaredField("colors");
                                 f3.setAccessible(true);
                                 byte[] materials = (byte[]) f3.get(map); // colors
                                 byte[] colors = new byte[materials.length*3];
@@ -534,7 +524,7 @@ public class CoreCommands {
                                     for(int c=0; c<sz; c++)
                                     {
                                         int index=r*sz+c;
-                                        int dec = MaterialMapColor.b(materials[i3]);
+                                        int dec = MaterialColor.getColorFromPackedId(materials[i3]);
                                         int red = dec & 0xff;
                                         int green = (dec >> 8) & 0xff;
                                         int blue = (dec >> 16) & 0xff;
@@ -548,7 +538,7 @@ public class CoreCommands {
                                 byte[] imgArr = baos.toByteArray();
                                 String b64 = Base64.getEncoder().encodeToString(imgArr);
                                 Document q = new Document().append("_id", i2);
-                                Bson u = Updates.combine(Updates.set("base64", b64), Updates.set("x", map.c), Updates.set("z", map.d), Updates.set("dimension", map.e.a().a()), Updates.set("scale", map.f), Updates.set("locked", map.h));
+                                Bson u = Updates.combine(Updates.set("base64", b64), Updates.set("x", map.centerX), Updates.set("z", map.centerZ), Updates.set("dimension", map.dimension.location().toString()), Updates.set("scale", map.scale), Updates.set("locked", map.locked));
                                 main.getMongo().update("maps", q, u, false);
                             } catch (Exception ignore) {}
                             i2++;

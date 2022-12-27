@@ -914,7 +914,6 @@ public enum Colors {
     MINECRAFT_DARK_GREEN(new Color(0,170,0)),
     MINECRAFT_DARK_PURPLE(new Color(170,0,170)),
     MINECRAFT_DARK_RED(new Color(170,0,0)),
-    MINECRAFT_GOLD(new Color(255,170,0)),
     MINECRAFT_GRAY(new Color(170,170,170)),
     MINECRAFT_GREEN(new Color(85,255,85)),
     MINECRAFT_LIGHT_PURPLE(new Color(255,85,255)),
@@ -1626,6 +1625,6 @@ public enum Colors {
     }
 
     public static void main(String[] args) {
-        System.out.println(getColorClosestTo(new Color(46, 204, 113)));
+        System.out.println(getColorClosestTo(new Color(255, 204, 0)));
     }
 }
