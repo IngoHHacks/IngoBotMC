@@ -45,9 +45,9 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_19_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -162,12 +162,13 @@ public class Main extends JavaPlugin implements Listener {
 
         Field f2;
         try {
-            f2 = ServerPlayer.class.getField("bO");
+            f2 = ServerPlayer.class.getField("bJ");
             f2.setAccessible(true);
-            EntityDataAccessor<Byte> dpmc = (EntityDataAccessor<Byte>) f2.get(null);
+            EntityDataAccessor<Byte> dpmc = (EntityDataAccessor<Byte>) f2.get(ingobotNPC);
             ingobotNPC.getEntityData().set(dpmc, (byte) 126); // Enable second layer (no cape)
         } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
             Bukkit.getLogger().warning("[IngoBotMC] bO field not found");
+            throw new RuntimeException(e);
         }
 
         try {
