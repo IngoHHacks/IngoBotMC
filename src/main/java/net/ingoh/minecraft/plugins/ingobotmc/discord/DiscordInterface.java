@@ -2,9 +2,10 @@ package net.ingoh.minecraft.plugins.ingobotmc.discord;
 
 import javax.security.auth.login.LoginException;
 
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.ingoh.minecraft.plugins.ingobotmc.minecord.ExternalMessage;
 import org.bukkit.Bukkit;
 
-import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -52,7 +53,7 @@ public class DiscordInterface {
         string = formatCodes(string);
         discord.getTextChannelById(channels.textChannel).sendMessage(string).queue();
         if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
-            ExternalMessageEvent messageEvent = new ExternalMessageEvent(string);
+            ExternalMessage messageEvent = new ExternalMessage(string);
             main.scheduleMinecord(messageEvent);
         }
     }
@@ -61,7 +62,7 @@ public class DiscordInterface {
         string = formatCodes(string);
         discord.getTextChannelById(channels.textChannel).sendMessage(string).queue();
         if (sendMinecord && Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
-            ExternalMessageEvent messageEvent = new ExternalMessageEvent(string);
+            ExternalMessage messageEvent = new ExternalMessage(string);
             main.scheduleMinecord(messageEvent);
         }
     }
@@ -140,15 +141,15 @@ public class DiscordInterface {
     }
 
 
-    public void editMessage(long channelId, long messageId, String string) {
+    public void editMessage(long channelId, long messageId, String string) throws ErrorResponseException {
         discord.getTextChannelById(channelId).editMessageById(messageId, string).queue();
     }
 
-    public void editMessage(long channelId, long messageId, Message message) {
+    public void editMessage(long channelId, long messageId, Message message) throws ErrorResponseException {
         discord.getTextChannelById(channelId).editMessageById(messageId, message).queue();
     }
 
-    public void editMessage(long channelId, long messageId, MessageEmbed message) {
+    public void editMessage(long channelId, long messageId, MessageEmbed message) throws ErrorResponseException {
         discord.getTextChannelById(channelId).editMessageEmbedsById(messageId, message).queue();
     }
 }

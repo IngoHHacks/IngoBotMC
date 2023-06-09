@@ -7,6 +7,7 @@ import net.ingoh.minecraft.plugins.ingobotmc.command.CommandResult;
 import net.ingoh.minecraft.plugins.ingobotmc.command.CoreCommands;
 import net.ingoh.minecraft.plugins.ingobotmc.command.ScheduledCommand;
 import net.ingoh.minecraft.plugins.ingobotmc.discord.DiscordInterface;
+import net.ingoh.minecraft.plugins.ingobotmc.minecord.ExternalMessage;
 import net.minecraft.commands.CommandSourceStack;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -15,14 +16,12 @@ import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import io.github.starsdown64.minecord.api.ExternalMessageEvent;
-
 public class MainLoop implements Runnable {
 
     private volatile LinkedList<Message> outputQueue;
     private volatile LinkedList<ScheduledCommand> commandQueue;
     private volatile LinkedList<String> syncCommands;
-    private volatile LinkedList<ExternalMessageEvent> minecordBC;
+    private volatile LinkedList<ExternalMessage> minecordBC;
     private volatile ArrayList<Countdown> countdowns;
     private volatile LinkedList<OfflinePlayer> whitelistQueue;
     private volatile LinkedList<Mob> sacrifices;
@@ -32,12 +31,25 @@ public class MainLoop implements Runnable {
     boolean queueUsed;
     DiscordInterface discord;
 
-    public MainLoop(Main mainI, LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, LinkedList<ExternalMessageEvent> minecordBC, ArrayList<Countdown> countdowns, LinkedList<OfflinePlayer> whitelistQueue, DiscordInterface discord, LinkedList<Mob> sacrifices, LinkedList<Integer> sacrificeAges) {
+    public MainLoop(Main mainI, LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, LinkedList<ExternalMessage> minecordBC, ArrayList<Countdown> countdowns, LinkedList<OfflinePlayer> whitelistQueue, DiscordInterface discord, LinkedList<Mob> sacrifices, LinkedList<Integer> sacrificeAges) {
         this.mainI = mainI;
         this.outputQueue = outputQueue;
         this.commandQueue = commandQueue;
         this.syncCommands = syncCommands;
         this.minecordBC = minecordBC;
+        this.countdowns = countdowns;
+        this.whitelistQueue = whitelistQueue;
+        queueUsed = false;
+        this.discord = discord;
+        this.sacrifices = sacrifices;
+        this.sacrificeAges = sacrificeAges;
+    }
+
+    public MainLoop(Main mainI, LinkedList<Message> outputQueue, LinkedList<ScheduledCommand> commandQueue, LinkedList<String> syncCommands, ArrayList<Countdown> countdowns, LinkedList<OfflinePlayer> whitelistQueue, DiscordInterface discord, LinkedList<Mob> sacrifices, LinkedList<Integer> sacrificeAges) {
+        this.mainI = mainI;
+        this.outputQueue = outputQueue;
+        this.commandQueue = commandQueue;
+        this.syncCommands = syncCommands;
         this.countdowns = countdowns;
         this.whitelistQueue = whitelistQueue;
         queueUsed = false;
@@ -97,10 +109,12 @@ public class MainLoop implements Runnable {
                 syncCommands.removeFirst();
             }
 
-            if (minecordBC.size() > 0) {
-                ExternalMessageEvent msg = minecordBC.getFirst();
-                Bukkit.getPluginManager().callEvent(msg);
-                minecordBC.removeFirst();
+            if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
+                if (minecordBC.size() > 0) {
+                    ExternalMessage msg = minecordBC.getFirst();
+                    Bukkit.getPluginManager().callEvent(msg.getEvent());
+                    minecordBC.removeFirst();
+                }
             }
 
             if (countdowns.size() > 0) {
@@ -167,7 +181,9 @@ public class MainLoop implements Runnable {
             if (outputQueue.size() > 0) outputQueue.removeFirst();
             if (commandQueue.size() > 0) commandQueue.removeFirst();
             if (syncCommands.size() > 0) syncCommands.removeFirst();
-            if (minecordBC.size() > 0) minecordBC.removeFirst();
+            if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
+                if (minecordBC.size() > 0) minecordBC.removeFirst();
+            }
             if (countdowns.size() > 0) countdowns.remove(0);
             if (sacrifices.size() > 0) sacrifices.removeFirst();
         }

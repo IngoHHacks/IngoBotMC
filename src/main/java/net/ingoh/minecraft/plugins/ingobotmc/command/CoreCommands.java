@@ -25,8 +25,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
-import org.bukkit.craftbukkit.v1_19_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_19_R3.map.CraftMapRenderer;
+import org.bukkit.craftbukkit.v1_20_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R1.map.CraftMapRenderer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -45,7 +45,7 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-import net.minecraft.world.level.material.MaterialColor;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.ingoh.minecraft.plugins.ingobotmc.IngoBot;
 import net.ingoh.minecraft.plugins.ingobotmc.IngoBotTabCompleter;
@@ -473,7 +473,7 @@ public class CoreCommands {
                                 for(int c=0; c<sz; c++)
                                 {
                                     int index=r*sz+c;
-                                    int dec = MaterialColor.getColorFromPackedId(materials[i]);
+                                    int dec = MapColor.getColorFromPackedId(materials[i]);
                                     int red = dec & 0xff;
                                     int green = (dec >> 8) & 0xff;
                                     int blue = (dec >> 16) & 0xff;
@@ -524,7 +524,7 @@ public class CoreCommands {
                                     for(int c=0; c<sz; c++)
                                     {
                                         int index=r*sz+c;
-                                        int dec = MaterialColor.getColorFromPackedId(materials[i3]);
+                                        int dec = MapColor.getColorFromPackedId(materials[i3]);
                                         int red = dec & 0xff;
                                         int green = (dec >> 8) & 0xff;
                                         int blue = (dec >> 16) & 0xff;

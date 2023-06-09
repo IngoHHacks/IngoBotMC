@@ -21,6 +21,7 @@ import net.ingoh.minecraft.plugins.ingobotmc.command.CommandResult;
 import net.ingoh.minecraft.plugins.ingobotmc.command.CoreCommands;
 import net.ingoh.minecraft.plugins.ingobotmc.command.ScheduledCommand;
 import net.ingoh.minecraft.plugins.ingobotmc.discord.DiscordInterface;
+import net.ingoh.minecraft.plugins.ingobotmc.minecord.ExternalMessage;
 import net.ingoh.minecraft.plugins.ingobotmc.web.AsyncWebThread;
 import net.ingoh.minecraft.plugins.ingobotmc.web.Query;
 import net.ingoh.minecraft.plugins.ingobotmc.web.WebThread;
@@ -45,9 +46,9 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_19_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_19_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_20_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -70,7 +71,6 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
 
-import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.util.Tuple;
@@ -92,7 +92,7 @@ public class Main extends JavaPlugin implements Listener {
     MainLoop mainLoop;
     ServerPlayer ingobotNPC;
     LinkedList<String> syncCommands;
-    LinkedList<ExternalMessageEvent> minecordBC;
+    LinkedList<ExternalMessage> minecordBC;
     ArrayList<Countdown> countdowns;
     LinkedList<OfflinePlayer> whitelistQueue;
     LinkedList<Mob> sacrifices;
@@ -139,13 +139,19 @@ public class Main extends JavaPlugin implements Listener {
         outputQueue = new LinkedList<>();
         commandQueue = new LinkedList<>();
         syncCommands = new LinkedList<>();
-        minecordBC = new LinkedList<>();
+        if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
+            minecordBC = new LinkedList<>();
+        }
         countdowns = new ArrayList<>();
         whitelistQueue = new LinkedList<>();
         sacrifices = new LinkedList<>();
         sacrificeAges = new LinkedList<>();
 
-        mainLoop = new MainLoop(this, outputQueue, commandQueue, syncCommands, minecordBC, countdowns, whitelistQueue, discord, sacrifices, sacrificeAges);
+        if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
+            mainLoop = new MainLoop(this, outputQueue, commandQueue, syncCommands, minecordBC, countdowns, whitelistQueue, discord, sacrifices, sacrificeAges);
+        } else {
+            mainLoop = new MainLoop(this, outputQueue, commandQueue, syncCommands, countdowns, whitelistQueue, discord, sacrifices, sacrificeAges);
+        }
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, mainLoop, 0, 1);
 
         // Entity
@@ -162,12 +168,12 @@ public class Main extends JavaPlugin implements Listener {
 
         Field f2;
         try {
-            f2 = ServerPlayer.class.getField("bJ");
+            f2 = ServerPlayer.class.getField("bL"); // DATA_PLAYER_MODE_CUSTOMISATION
             f2.setAccessible(true);
             EntityDataAccessor<Byte> dpmc = (EntityDataAccessor<Byte>) f2.get(ingobotNPC);
             ingobotNPC.getEntityData().set(dpmc, (byte) 126); // Enable second layer (no cape)
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            Bukkit.getLogger().warning("[IngoBotMC] bO field not found");
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[IngoBotMC] Could not load field bJ field.");
             throw new RuntimeException(e);
         }
 
@@ -216,6 +222,7 @@ public class Main extends JavaPlugin implements Listener {
         cThread.end();
         mongo.end();
         mongoTask.cancel();
+        ingobotNPC.disconnect();
     }
 
 
@@ -382,7 +389,7 @@ public class Main extends JavaPlugin implements Listener {
         syncCommands.add(contentRaw);
     }
 
-    public void scheduleMinecord(ExternalMessageEvent messageEvent) {
+    public void scheduleMinecord(ExternalMessage messageEvent) {
         while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
         minecordBC.add(messageEvent);
     }

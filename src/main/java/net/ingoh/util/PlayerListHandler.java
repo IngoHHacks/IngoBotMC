@@ -23,51 +23,53 @@ public class PlayerListHandler {
         players.forEach(player -> {
             if (!exclude.contains(player)) {
                 Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player);
-                String role = team == null ? "<:white:955431358229012580> " : getColorIcon(team.getColor());
+                String role = team == null ? "🙂 " : getColorIcon(team.getColor());
                 eBuilder.appendDescription(role + player + "\n");
             }
         });
         eBuilder.appendDescription("Last update: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        discord.editMessage(config.getcPlayerlist(), config.getmPlayerlist(), eBuilder.build());
+        try {
+            discord.editMessage(config.getcPlayerlist(), config.getmPlayerlist(), eBuilder.build());
+        } catch (Exception ignored) {}
     }
 
 
     private static String getColorIcon(ChatColor color) {
         switch (color) {
             case AQUA:
-                return "<:streamer:955432956313358376> ";
+                return "📽️ ";
             case BLACK:
-                return "<:spy:955431358048661554> ";
+                return "🥸 ";
             case BLUE:
-                return "<:investigator:955431358090592326> ";
+                return "🕵️ ";
             case DARK_AQUA:
-                return "<:yellow:955431358312902656> ";
+                return "❓ ";
             case DARK_BLUE:
-                return "<:yellow:955431358312902656> ";
+                return "❓ ";
             case DARK_GRAY:
-                return "<:yellow:955431358312902656> ";
+                return "❓ ";
             case DARK_GREEN:
-                return "<:yellow:955431358312902656> ";
+                return "❓ ";
             case DARK_PURPLE:
-                return "<:moderator:955431358241574912> ";
+                return "🛡️ ";
             case DARK_RED:
-                return "<:yellow:955431358312902656> ";
+                return "❓ ";
             case GOLD:
-                return "<:orange:955431358090575902> ";
+                return "🟧 ";
             case GRAY:
-                return "<:yellow:955431358312902656> ";
+                return "❓ ";
             case GREEN:
-                return "<:operator:955431358048636978> ";
+                return "⚙️ ";
             case LIGHT_PURPLE:
-                return "<:bot:955431358195462164> ";
+                return "🤖 ";
             case RED:
-                return "<:officer:955431357675347969> ";
+                return "👮 ";
             case WHITE:
-                return "<:white:955431358229012580> ";
+                return "◻️ ";
             case YELLOW:
-                return "<:yellow:955431358312902656> ";
+                return "🟨 ";
             default:
-                return "<:white:955431358229012580> ";
+                return "❓ ";
         }
     }
 
