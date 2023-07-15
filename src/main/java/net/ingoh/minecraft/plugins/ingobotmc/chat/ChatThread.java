@@ -17,10 +17,6 @@ public class ChatThread {
         Bukkit.getScheduler().runTaskAsynchronously(pl, a);
     }
 
-    public boolean queueUsed() {
-        return a.queueUsed;
-    }
-
     public void end() {
         a.end = true;
     }

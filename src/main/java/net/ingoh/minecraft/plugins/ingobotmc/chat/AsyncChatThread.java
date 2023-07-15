@@ -17,29 +17,27 @@ public class AsyncChatThread implements Runnable {
     LinkedList<ChatMessage> queue;
     WebThread wThread;
     Main main;
-    boolean queueUsed;
 
     public AsyncChatThread(Main main, DiscordInterface discord, LinkedList<ChatMessage> queue, WebThread wThread){
         this.discord = discord;
         this.queue = queue;
         this.wThread = wThread;
-        queueUsed = false;
         this.main = main;
     }
 
     @Override
     public void run() {
         while (!end) {
-            queueUsed = true;
-            if (queue.size() > 0) {
-                ChatMessage msg = queue.getFirst();
-                if (msg.message.charAt(0) == '!' && msg.message.length() > 1) {
-                    String args[] = msg.message.substring(1, msg.message.length()).split(" ");
-                    CoreCommands.scheduleCommand(main, args[0], Arrays.copyOfRange(args, 1, args.length), msg.sender, wThread, true, discord);
+            synchronized (main.chatLock) {
+                if (queue.size() > 0) {
+                    ChatMessage msg = queue.getFirst();
+                    if (msg.message.charAt(0) == '!' && msg.message.length() > 1) {
+                        String args[] = msg.message.substring(1, msg.message.length()).split(" ");
+                        CoreCommands.scheduleCommand(main, args[0], Arrays.copyOfRange(args, 1, args.length), msg.sender, wThread, true, discord);
+                    }
+                    queue.removeFirst();
                 }
-                queue.removeFirst();
             }
-            queueUsed = false;
             try {
                 Thread.sleep(40);
             } catch (InterruptedException e) {

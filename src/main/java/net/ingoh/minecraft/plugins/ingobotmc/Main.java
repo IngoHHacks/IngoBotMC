@@ -15,13 +15,13 @@ import java.util.function.Function;
 
 import javax.security.auth.login.LoginException;
 
+import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.ingoh.minecraft.plugins.ingobotmc.chat.ChatThread;
 import net.ingoh.minecraft.plugins.ingobotmc.command.ChatMessage;
 import net.ingoh.minecraft.plugins.ingobotmc.command.CommandResult;
 import net.ingoh.minecraft.plugins.ingobotmc.command.CoreCommands;
 import net.ingoh.minecraft.plugins.ingobotmc.command.ScheduledCommand;
 import net.ingoh.minecraft.plugins.ingobotmc.discord.DiscordInterface;
-import net.ingoh.minecraft.plugins.ingobotmc.minecord.ExternalMessage;
 import net.ingoh.minecraft.plugins.ingobotmc.web.AsyncWebThread;
 import net.ingoh.minecraft.plugins.ingobotmc.web.Query;
 import net.ingoh.minecraft.plugins.ingobotmc.web.WebThread;
@@ -31,7 +31,6 @@ import net.ingoh.util.RandomThings;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -85,6 +84,7 @@ public class Main extends JavaPlugin implements Listener {
     public Config config;
     public DiscordInterface discord;
     LinkedList<ChatMessage> chatQueue;
+    public final Object chatLock = new Object();
     WebThread wThread;
     ChatThread cThread;
     LinkedList<Message> outputQueue;
@@ -92,11 +92,12 @@ public class Main extends JavaPlugin implements Listener {
     MainLoop mainLoop;
     ServerPlayer ingobotNPC;
     LinkedList<String> syncCommands;
-    LinkedList<ExternalMessage> minecordBC;
+    LinkedList<ExternalMessageEvent> minecordBC;
     ArrayList<Countdown> countdowns;
     LinkedList<OfflinePlayer> whitelistQueue;
     LinkedList<Mob> sacrifices;
     LinkedList<Integer> sacrificeAges;
+    public final Object mainLock = new Object();
 
     MinecraftServer nmsServer;
     ServerLevel nmsWorld; // First world (overworld)
@@ -119,13 +120,15 @@ public class Main extends JavaPlugin implements Listener {
         } catch (LoginException e) {
             e.printStackTrace();
         }
+
         try {
-            // Wait for three seconds to load JDA
-            // TODO: Find workaround
-            Thread.sleep(3000);
-        } catch (InterruptedException e1) {
-            e1.printStackTrace();
+            long time = System.currentTimeMillis();
+            discord.discord.awaitReady();
+            Bukkit.getLogger().info("JDA ready in " + (System.currentTimeMillis() - time) + "ms");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
+
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("i").setTabCompleter(new IngoBotTabCompleter());
 
@@ -251,21 +254,22 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onChatMessage(AsyncPlayerChatEvent event) {
-        if (event.isAsynchronous()) {
-            while (cThread.queueUsed()); // Wait
+        synchronized (chatLock) {
             chatQueue.add(new ChatMessage(event.getMessage(), event.getPlayer().getName()));
             discord.sendChat("<" + event.getPlayer().getName() + "> " + event.getMessage(), false);
         }
     }
 
     public void scheduleCommand(ScheduledCommand scheduledCommand) {
-        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
-        commandQueue.add(scheduledCommand);
+        synchronized (mainLock) {
+            commandQueue.add(scheduledCommand);
+        }
     }
 
     public void scheduleMessage(Message message) {
-        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
-        outputQueue.add(message);
+        synchronized (mainLock) {
+            outputQueue.add(message);
+        }
     }
 
     public static String argsToString(String[] args) {
@@ -360,12 +364,13 @@ public class Main extends JavaPlugin implements Listener {
     public void onBroadcastMessage(BroadcastMessageEvent event) {
         // For Discord messages
         String msg = event.getMessage();
-        if (msg.contains("#") && msg.contains("<") && msg.contains("> ") && msg.contains("!")) {
+        if (msg.contains("@") && msg.contains("<") && msg.contains("> ") && msg.contains("!")) {
             String cmd = StringUtils.substringAfter(msg, "> ");
             if (cmd.charAt(0) == '!' && cmd.length() > 1) {
                 String sender = StringUtils.substringBetween(msg, "<", ">");
-                while (cThread.queueUsed()); // Wait
-                chatQueue.add(new ChatMessage(cmd, sender));
+                synchronized (chatLock) {
+                    chatQueue.add(new ChatMessage(cmd, sender));
+                }
                 discord.sendChat(event.getMessage(), false);
             }
         }
@@ -385,13 +390,15 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void sendCommand(String contentRaw) {
-        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
-        syncCommands.add(contentRaw);
+        synchronized (mainLock) {
+            syncCommands.add(contentRaw);
+        }
     }
 
-    public void scheduleMinecord(ExternalMessage messageEvent) {
-        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
-        minecordBC.add(messageEvent);
+    public void scheduleMinecord(ExternalMessageEvent messageEvent) {
+        synchronized (mainLock) {
+            minecordBC.add(messageEvent);
+        }
     }
 
     public boolean scheduleCountdown(Player senderP, double time, boolean uppies) {
@@ -408,8 +415,9 @@ public class Main extends JavaPlugin implements Listener {
             }
         }
 
-        while (!Bukkit.isPrimaryThread() && mainLoop.queueUsed); // Wait until queue is not used
-        countdowns.add(new Countdown(discord, senderP, time, uppies));
+        synchronized (mainLock) {
+            countdowns.add(new Countdown(discord, senderP, time, uppies));
+        }
 
         return true;
 

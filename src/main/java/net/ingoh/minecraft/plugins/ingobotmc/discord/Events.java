@@ -35,8 +35,8 @@ public class Events extends ListenerAdapter {
     @Override
     public void onMessageReactionAdd(MessageReactionAddEvent event) {
         try {
-            if ((long)(event.getChannel().getIdLong()) == (channels.spreadsheetChannel) && event.getReaction().getReactionEmote().getName().equals("✅")) {
-                String ign = event.getReaction().getTextChannel().retrieveMessageById(event.getMessageId()).complete().getContentRaw().split(Pattern.quote("`Minecraft Username:` **"))[1].split(Pattern.quote("**\n"))[0].trim();
+            if ((long)(event.getChannel().getIdLong()) == (channels.spreadsheetChannel) && event.getReaction().getEmoji().getName().equals("✅")) {
+                String ign = event.getReaction().getGuildChannel().retrieveMessageById(event.getMessageId()).complete().getContentRaw().split(Pattern.quote("`Minecraft Username:` **"))[1].split(Pattern.quote("**\n"))[0].trim();
                 m.whitelist(ign);
             }
         } catch (Exception ignore) {}

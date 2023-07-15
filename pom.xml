@@ -5,7 +5,7 @@
 
   <groupId>net.ingoh</groupId>
   <artifactId>IngoBotMC</artifactId>
-  <version>1.6.0</version>
+  <version>1.6.1</version>
 
   <name>ingoh-ingobotmc-plugin</name>
   <url>ingoh.net</url>
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
-      <version>4.3.0_279</version>
+      <version>5.0.0-beta.10</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -58,6 +58,7 @@
       <groupId>com.github.StarsDown64</groupId>
       <artifactId>Minecord-API</artifactId>
       <version>1.0.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.mongodb</groupId>

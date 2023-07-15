@@ -2,14 +2,13 @@ package net.ingoh.minecraft.plugins.ingobotmc.discord;
 
 import javax.security.auth.login.LoginException;
 
+import io.github.starsdown64.minecord.api.ExternalMessageEvent;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
-import net.ingoh.minecraft.plugins.ingobotmc.minecord.ExternalMessage;
 import org.bukkit.Bukkit;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.ingoh.minecraft.plugins.ingobotmc.Config;
 import net.ingoh.minecraft.plugins.ingobotmc.Main;
@@ -17,7 +16,7 @@ import net.ingoh.minecraft.plugins.ingobotmc.Main;
 public class DiscordInterface {
 
     private String token;
-    private JDA discord;
+    public JDA discord;
     private Channels channels;
     private Config config;
     private Main main;
@@ -53,7 +52,7 @@ public class DiscordInterface {
         string = formatCodes(string);
         discord.getTextChannelById(channels.textChannel).sendMessage(string).queue();
         if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
-            ExternalMessage messageEvent = new ExternalMessage(string);
+            ExternalMessageEvent messageEvent = new ExternalMessageEvent(string);
             main.scheduleMinecord(messageEvent);
         }
     }
@@ -62,7 +61,7 @@ public class DiscordInterface {
         string = formatCodes(string);
         discord.getTextChannelById(channels.textChannel).sendMessage(string).queue();
         if (sendMinecord && Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
-            ExternalMessage messageEvent = new ExternalMessage(string);
+            ExternalMessageEvent messageEvent = new ExternalMessageEvent(string);
             main.scheduleMinecord(messageEvent);
         }
     }
@@ -132,10 +131,6 @@ public class DiscordInterface {
         discord.getTextChannelById(channelId).sendMessage(string).queue();
     }
 
-    public void sendTo(long channelId, Message message) {
-        discord.getTextChannelById(channelId).sendMessage(message).queue();
-    }
-
     public void sendTo(long channelId, MessageEmbed message) {
         discord.getTextChannelById(channelId).sendMessageEmbeds(message).queue();
     }
@@ -143,10 +138,6 @@ public class DiscordInterface {
 
     public void editMessage(long channelId, long messageId, String string) throws ErrorResponseException {
         discord.getTextChannelById(channelId).editMessageById(messageId, string).queue();
-    }
-
-    public void editMessage(long channelId, long messageId, Message message) throws ErrorResponseException {
-        discord.getTextChannelById(channelId).editMessageById(messageId, message).queue();
     }
 
     public void editMessage(long channelId, long messageId, MessageEmbed message) throws ErrorResponseException {
