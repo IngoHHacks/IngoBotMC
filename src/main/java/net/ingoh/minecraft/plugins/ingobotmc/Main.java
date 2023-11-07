@@ -16,6 +16,7 @@ import java.util.function.Function;
 import javax.security.auth.login.LoginException;
 
 import io.github.starsdown64.minecord.api.ExternalMessageEvent;
+import io.netty.channel.embedded.EmbeddedChannel;
 import net.ingoh.minecraft.plugins.ingobotmc.chat.ChatThread;
 import net.ingoh.minecraft.plugins.ingobotmc.command.ChatMessage;
 import net.ingoh.minecraft.plugins.ingobotmc.command.CommandResult;
@@ -29,10 +30,13 @@ import net.ingoh.util.Mongo;
 import net.ingoh.util.PlayerListHandler;
 import net.ingoh.util.RandomThings;
 import net.minecraft.network.Connection;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
@@ -45,9 +49,9 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_20_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_20_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -171,23 +175,28 @@ public class Main extends JavaPlugin implements Listener {
 
         Field f2;
         try {
-            f2 = ServerPlayer.class.getField("bL"); // DATA_PLAYER_MODE_CUSTOMISATION
+            f2 = ServerPlayer.class.getField("bM"); // DATA_PLAYER_MODE_CUSTOMISATION
             f2.setAccessible(true);
             EntityDataAccessor<Byte> dpmc = (EntityDataAccessor<Byte>) f2.get(ingobotNPC);
-            ingobotNPC.getEntityData().set(dpmc, (byte) 126); // Enable second layer (no cape)
+            (ingobotNPC).getEntityData().set(dpmc, (byte) 126); // Enable second layer (no cape)
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[IngoBotMC] Could not load field bJ field.");
+            Bukkit.getLogger().warning("[IngoBotMC] Could not load field DATA_PLAYER_MODE_CUSTOMISATION (\"bM\") field.");
             throw new RuntimeException(e);
         }
 
         try {
             InetSocketAddress address = new InetSocketAddress(config.getFakeConnectionHost(), config.getFakeConnectionPort());
 
-            Connection conn = Connection.connectToServer(address, true);
+            Connection conn = Connection.connectToServer(address, true, null);
 
             ingobotNPC.getBukkitEntity().setSleepingIgnored(true);
 
-            nmsServer.getPlayerList().placeNewPlayer(conn, ingobotNPC);
+            Connection sbConn = new Connection(PacketFlow.SERVERBOUND);
+            EmbeddedChannel embeddedChannel = new EmbeddedChannel(sbConn);
+            embeddedChannel.attr(Connection.ATTRIBUTE_SERVERBOUND_PROTOCOL).set(ConnectionProtocol.PLAY.codec(PacketFlow.SERVERBOUND));
+            sbConn.address = address;
+
+            nmsServer.getPlayerList().placeNewPlayer(sbConn, ingobotNPC, CommonListenerCookie.createInitial(ingobotNPC.getGameProfile()));
 
             ingobotNPC.moveTo(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
 
@@ -291,6 +300,10 @@ public class Main extends JavaPlugin implements Listener {
             double z = event.getEntity().getLocation().getZ();
             if (x > 155.5 && x < 165.5 &&  y > 50 && y < 60 && z > 203.5 && z < 213.5) {
                 try {
+                    if (!entity.isAware()) {
+                        event.setCancelled(true);
+                        return;
+                    }
                     Method getHandle = entity.getClass().getMethod("getHandle");
                     Object eo = getHandle.invoke(entity);
                     Field field = eo.getClass().getField("Q" /*noPhysics*/);
@@ -341,7 +354,6 @@ public class Main extends JavaPlugin implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
-        createNPCFor(ingobotNPC, p);
         Document q = new Document().append("_UUID", event.getPlayer().getUniqueId().toString());
         Bson u = Updates.combine(Updates.set("_username", event.getPlayer().getName()),
                                  Updates.currentTimestamp("_last_online"));
@@ -374,14 +386,6 @@ public class Main extends JavaPlugin implements Listener {
                 discord.sendChat(event.getMessage(), false);
             }
         }
-    }
-
-    public void createNPCFor(ServerPlayer npc, Player target) {
-        ServerGamePacketListenerImpl connection = ((CraftPlayer)target).getHandle().connection;
-        connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, npc));
-        connection.send(new ClientboundAddPlayerPacket(npc));
-        connection.send(new ClientboundRotateHeadPacket(npc, (byte)(64)));
-        connection.send(new ClientboundSetEntityDataPacket(npc.getId(), npc.getEntityData().getNonDefaultValues()));
     }
 
     public void playAttackAnimationFor(ServerPlayer npc, Player target) {

@@ -74,7 +74,7 @@ public class AsyncWebThread implements Runnable {
                 if (Math.random() > 0.5) start = start.toLowerCase();
                 queue.add(new Query(Type.CHAT, null, new String[]{start, "true", "random"}, true));
             }
-            if (queue.size() > 0) {
+            if (!queue.isEmpty()) {
                 Query q = queue.getFirst();
                 String user = q.user;
                 boolean isPublic = q.isPublic;
@@ -98,9 +98,8 @@ public class AsyncWebThread implements Runnable {
                                 res = executeConverse(u, finish, ch, model, text);
                                 if (res.charAt(0) != '[') {
                                     if (finish) {
-                                        String a = text;
                                         String b = res.replaceFirst(Pattern.quote(">>"), "");
-                                        ch.appendF(a, b, isPublic, user, model, finish, true);
+                                        ch.appendF(text, b, isPublic, user, model, finish, true);
                                     } else {
                                         ch.append(text, isPublic, user, model, finish, true);
                                         ch.append(res, isPublic, user, model, finish, false);

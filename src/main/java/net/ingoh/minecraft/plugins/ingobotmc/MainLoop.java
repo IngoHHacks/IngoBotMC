@@ -65,28 +65,33 @@ public class MainLoop implements Runnable {
     public void run() {
         synchronized (mainI.mainLock) {
             try {
-                if (outputQueue.size() > 0) {
-                    if (System.currentTimeMillis() > outputQueue.getFirst().delay) {
+                if (!outputQueue.isEmpty()) {
+                    Message item = outputQueue.getFirst();
+                    if (item.message.isBlank() || item.message.replace(">>", "").isBlank()) {
+                        outputQueue.removeFirst();
+                        return;
+                    }
+                    if (System.currentTimeMillis() > item.delay) {
                         if (outputQueue.getFirst() instanceof FormattedMessage) {
                             for (Player player : Bukkit.getOnlinePlayers()) {
-                                player.sendRawMessage(outputQueue.getFirst().message);
+                                player.sendRawMessage(item.message);
                             }
                         } else {
                             if (outputQueue.getFirst().receiver != null) {
-                                Player p = Bukkit.getPlayer(outputQueue.getFirst().receiver);
-                                if (p != null) p.sendMessage(outputQueue.getFirst().message);
-                                else Bukkit.getLogger().info(outputQueue.getFirst().message);
-                                discord.sendChat("IngoBot -> " + outputQueue.getFirst().receiver + ": " + outputQueue.getFirst().message, false);
+                                Player p = Bukkit.getPlayer(item.receiver);
+                                if (p != null) p.sendMessage(item.message);
+                                else Bukkit.getLogger().info(item.message);
+                                discord.sendChat("IngoBot -> " + item.receiver + ": " + item.message, false);
                             } else {
-                                Bukkit.broadcastMessage(outputQueue.getFirst().message);
-                                discord.sendChat(outputQueue.getFirst().message);
+                                Bukkit.broadcastMessage(item.message);
+                                discord.sendChat(item.message);
                             }
                         }
                         outputQueue.removeFirst();
                     }
                 }
 
-                if (commandQueue.size() > 0) {
+                if (!commandQueue.isEmpty()) {
                     CommandResult result;
                     ScheduledCommand cmd = commandQueue.getFirst();
                     result = CoreCommands.executeCommand(cmd);
@@ -99,7 +104,7 @@ public class MainLoop implements Runnable {
                     commandQueue.removeFirst();
                 }
 
-                if (syncCommands.size() > 0) {
+                if (!syncCommands.isEmpty()) {
                     String contentRaw = syncCommands.getFirst();
                     if (contentRaw.length() > 1 && contentRaw.charAt(0) == '.' && contentRaw.charAt(1) != '.') {
                         CommandSourceStack clw = mainI.ingobotNPC.createCommandSourceStack();
@@ -109,14 +114,14 @@ public class MainLoop implements Runnable {
                 }
 
                 if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
-                    if (minecordBC.size() > 0) {
+                    if (!minecordBC.isEmpty()) {
                         ExternalMessageEvent msg = minecordBC.getFirst();
                         Bukkit.getServer().getPluginManager().callEvent(msg);
                         minecordBC.removeFirst();
                     }
                 }
 
-                if (countdowns.size() > 0) {
+                if (!countdowns.isEmpty()) {
                     LinkedList<Countdown> scheduleDeletion = new LinkedList<>();
                     for (int i = 0; i < countdowns.size(); i++) {
                         if (countdowns.get(i).uppies) {
@@ -144,7 +149,7 @@ public class MainLoop implements Runnable {
                     }
                 }
 
-                if (whitelistQueue.size() > 0) {
+                if (!whitelistQueue.isEmpty()) {
                     if (!whitelistQueue.getFirst().isWhitelisted()) {
                         whitelistQueue.getFirst().setWhitelisted(true);
                         discord.sendTo(discord.getChannels().spreadsheetChannel, "Whitelisted user " + whitelistQueue.getFirst().getName() + ", UUID: " + whitelistQueue.getFirst().getUniqueId());
@@ -154,7 +159,7 @@ public class MainLoop implements Runnable {
                     whitelistQueue.removeFirst();
                 }
 
-                if (sacrifices.size() > 0) {
+                if (!sacrifices.isEmpty()) {
                     for (int i = sacrifices.size() - 1; i >= 0; i--) {
                         Mob entity = sacrifices.get(i);
                         Vector loc = entity.getLocation().toVector();
@@ -177,14 +182,14 @@ public class MainLoop implements Runnable {
                 // Failsafe to prevent infinite loops
                 discord.sendDebug("ERROR IN MAIN LOOP: " + e.getMessage());
                 discord.printStackTrace(e.getStackTrace());
-                if (outputQueue.size() > 0) outputQueue.removeFirst();
-                if (commandQueue.size() > 0) commandQueue.removeFirst();
-                if (syncCommands.size() > 0) syncCommands.removeFirst();
+                if (!outputQueue.isEmpty()) outputQueue.removeFirst();
+                if (!commandQueue.isEmpty()) commandQueue.removeFirst();
+                if (!syncCommands.isEmpty()) syncCommands.removeFirst();
                 if (Bukkit.getServer().getPluginManager().getPlugin("Minecord") != null) {
-                    if (minecordBC.size() > 0) minecordBC.removeFirst();
+                    if (!minecordBC.isEmpty()) minecordBC.removeFirst();
                 }
-                if (countdowns.size() > 0) countdowns.remove(0);
-                if (sacrifices.size() > 0) sacrifices.removeFirst();
+                if (!countdowns.isEmpty()) countdowns.remove(0);
+                if (!sacrifices.isEmpty()) sacrifices.removeFirst();
             }
         }
     }

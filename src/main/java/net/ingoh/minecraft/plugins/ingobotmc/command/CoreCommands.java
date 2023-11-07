@@ -25,8 +25,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
-import org.bukkit.craftbukkit.v1_20_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_20_R1.map.CraftMapRenderer;
+import org.bukkit.craftbukkit.v1_20_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R2.map.CraftMapRenderer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -505,7 +505,7 @@ public class CoreCommands {
                     if (senderP.isOp()) {
                         int i2 = 0;
                         while (true) {
-                            MapItemSavedData map = (MapItemSavedData) ((CraftServer) Bukkit.getServer()).getServer().overworld().getDataStorage().get(MapItemSavedData::load, "map_" + i2);
+                            MapItemSavedData map = ((CraftServer) Bukkit.getServer()).getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), "map_" + i2);
                             if (map == null) {
                                 break;
                             }

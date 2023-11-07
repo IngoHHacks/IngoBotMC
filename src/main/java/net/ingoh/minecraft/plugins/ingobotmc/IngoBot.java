@@ -116,6 +116,9 @@ public class IngoBot {
         int i = 1;
         while (msgs.length > i) {
             if (Math.random() > 0.35) break;
+            if (msgs[i].isBlank() || msgs[i].replace(">>", "").isBlank()) {
+                return;
+            }
             main.scheduleMessage(new Message("<" + randomBotName() + "> " + msgs[i], null, 3000 * i + (int)(Math.random() * 1000)));
             i++;
         }
