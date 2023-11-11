@@ -5,7 +5,7 @@
 
   <groupId>net.ingoh</groupId>
   <artifactId>IngoBotMC</artifactId>
-  <version>1.7.0</version>
+  <version>1.7.1</version>
 
   <name>ingoh-ingobotmc-plugin</name>
   <url>ingoh.net</url>

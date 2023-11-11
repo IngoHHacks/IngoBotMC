@@ -38,6 +38,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
@@ -63,6 +64,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -185,20 +187,20 @@ public class Main extends JavaPlugin implements Listener {
         }
 
         try {
-            InetSocketAddress address = new InetSocketAddress(config.getFakeConnectionHost(), config.getFakeConnectionPort());
-
-            Connection conn = Connection.connectToServer(address, true, null);
-
             ingobotNPC.getBukkitEntity().setSleepingIgnored(true);
 
-            Connection sbConn = new Connection(PacketFlow.SERVERBOUND);
+            Connection sbConn = new MockConnection(PacketFlow.SERVERBOUND);
             EmbeddedChannel embeddedChannel = new EmbeddedChannel(sbConn);
             embeddedChannel.attr(Connection.ATTRIBUTE_SERVERBOUND_PROTOCOL).set(ConnectionProtocol.PLAY.codec(PacketFlow.SERVERBOUND));
-            sbConn.address = address;
+            sbConn.address = new InetSocketAddress(config.getFakeConnectionHost(), config.getFakeConnectionPort());
 
             nmsServer.getPlayerList().placeNewPlayer(sbConn, ingobotNPC, CommonListenerCookie.createInitial(ingobotNPC.getGameProfile()));
 
+            if (ingobotNPC.isDeadOrDying()) {
+                nmsServer.getPlayerList().respawn(ingobotNPC, false, PlayerRespawnEvent.RespawnReason.DEATH);
+            }
             ingobotNPC.moveTo(/*x*/160.5, /*y*/55, /*z*/208.5, /*yaw*/90, /*pitch*/0);
+            ingobotNPC.setGameMode(GameType.CREATIVE);
 
             RandomThings.initialize();
 
